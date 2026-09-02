@@ -1,0 +1,5 @@
+const baseUrl=import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
+type ApiResult<T>={data:T;meta?:Record<string,unknown>};
+
+async function request<T>(path:string,options:RequestInit={}):Promise<T>{const response=await fetch(`${baseUrl}${path}`,{headers:{'Content-Type':'application/json',...options.headers},...options});if(!response.ok){const body=await response.json().catch(()=>null) as {error?:{message?:string}}|null;throw new Error(body?.error?.message??'Não foi possível concluir a operação.')}const result=await response.json() as ApiResult<T>;return result.data}
+export const api={dashboard:()=>request<Record<string,unknown>>('/dashboard'),transactions:()=>request<unknown[]>('/transactions'),createTransaction:(data:unknown)=>request<unknown>('/transactions',{method:'POST',body:JSON.stringify(data)}),piggyBanks:()=>request<unknown[]>('/piggy-banks'),groups:()=>request<unknown[]>('/groups'),groupSummary:(id:string)=>request<Record<string,unknown>>(`/groups/${id}/summary`),budgets:()=>request<unknown[]>('/budgets'),notifications:()=>request<unknown[]>('/notifications')};

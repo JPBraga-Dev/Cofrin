@@ -1,0 +1,14 @@
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { motion } from 'framer-motion';
+import { Eye, EyeOff, X } from 'lucide-react';
+import { formatCurrency } from '../utils/format';
+type ButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onAnimationStart'|'onAnimationEnd'|'onAnimationIteration'|'onDrag'|'onDragStart'|'onDragEnd'> & { variant?: 'primary'|'secondary'|'pink'|'ghost' };
+export function Button({ children, variant = 'primary', className = '', ...props }: ButtonProps) { return <motion.button whileTap={{ scale:.97 }} className={`button ${variant} ${className}`} {...props}>{children}</motion.button>; }
+export function Card({ children, className = '' }: { children: ReactNode; className?: string }) { return <motion.section initial={{ opacity:0, y:4 }} animate={{ opacity:1, y:0 }} className={`card ${className}`}>{children}</motion.section>; }
+export function MoneyValue({ amount, type, hidden = false, size = 'normal' }: { amount: number; type?: 'income'|'expense'; hidden?: boolean; size?: 'normal'|'large'|'small' }) { return <span className={`money ${type ?? ''} ${size}`}>{type === 'expense' && !hidden ? '−' : ''}{formatCurrency(amount,hidden)}</span>; }
+export function Progress({ value, color = '#22c55e' }: { value: number; color?: string }) { return <div className="progress"><i style={{ width:`${Math.min(100,value)}%`, background:color }} /></div>; }
+export function Badge({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'green'|'red'|'pink'|'gold'|'neutral' }) { return <span className={`badge ${tone}`}>{children}</span>; }
+export function PageHeader({ eyebrow, title, description, action }: { eyebrow?: string; title: string; description: string; action?: ReactNode }) { return <div className="page-header"><div>{eyebrow && <p className="eyebrow">{eyebrow}</p>}<h1>{title}</h1><p>{description}</p></div>{action}</div>; }
+export function Drawer({ open, onClose, children }: { open: boolean; onClose: () => void; children: ReactNode }) { if (!open) return null; return <div className="drawer-backdrop" onMouseDown={onClose}><motion.aside initial={{x:420}} animate={{x:0}} exit={{x:420}} transition={{duration:.18}} className="drawer" onMouseDown={e => e.stopPropagation()}><button className="icon-button close" onClick={onClose} aria-label="Fechar"><X size={20}/></button>{children}</motion.aside></div>; }
+export function PrivacyButton({ hidden, onClick }: { hidden: boolean; onClick: () => void }) { return <button className="icon-button" onClick={onClick} aria-label={hidden ? 'Mostrar valores' : 'Ocultar valores'}>{hidden ? <EyeOff size={18}/> : <Eye size={18}/>}</button>; }
+export function EmptyState({ title, detail }: { title: string; detail: string }) { return <div className="empty"><div>◌</div><strong>{title}</strong><p>{detail}</p></div>; }
