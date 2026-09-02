@@ -1,0 +1,2 @@
+-- Seed intentionally holds no user data. Create an auth user first, then use the
+-- demo fixtures from backend/src/data/mockDatabase.ts during development.
