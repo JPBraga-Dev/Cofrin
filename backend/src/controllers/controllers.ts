@@ -29,6 +29,27 @@ import {
   transactionSchema,
 } from "../validators/schemas.js";
 import { notFound, ok } from "../utils/http.js";
+import {
+  acceptRequest,
+  CURRENT_USER_ID,
+  directConversation,
+  ensureGroupConversation,
+  listConversations as socialConversations,
+  listFriends as socialFriends,
+  listMessages as socialMessages,
+  listRequests as socialRequests,
+  markRead as socialMarkRead,
+  profileById,
+  profileByUsername,
+  publicProfile,
+  removeFriend,
+  searchProfiles,
+  sendMessage as socialSendMessage,
+  sendRequest,
+  setRequestStatus,
+  updateOwnProfile,
+  validateUsername,
+} from "../services/socialService.js";
 const id = () => crypto.randomUUID();
 const now = () => new Date().toISOString();
 const demoMembers: Record<string, string> = {
@@ -222,7 +243,7 @@ export async function createGroup(req: Request, res: Response) {
       id: id(),
       groupId,
       userId,
-      name: demoMembers[userId] ?? "Participante",
+      name: profileById(userId)?.displayName ?? demoMembers[userId] ?? "Participante",
       role: userId === "u-joao" ? "OWNER" : "MEMBER",
       expectedContribution: 0,
       joinedAt: stamp,
@@ -236,6 +257,7 @@ export async function createGroup(req: Request, res: Response) {
     createdAt: stamp,
     updatedAt: stamp,
   });
+  ensureGroupConversation(item.id);
   return res.status(201).json({ data: item });
 }
 export async function updateGroup(req: Request, res: Response) {
@@ -464,10 +486,34 @@ export const invoices = (req: Request, res: Response) => {
   return ok(res, { currentInvoice, nextInvoice: 0, futureInvoices: [] });
 };
 export const listNotifications = (_: Request, res: Response) =>
-  ok(res, mockDatabase.notifications);
+  ok(res, mockDatabase.notifications.filter((item) => item.userId === "u-joao"));
 export const readNotification = (req: Request, res: Response) => {
   const item = mockDatabase.notifications.find((n) => n.id === routeId(req));
   if (!item) return notFound(res, "Notification");
   item.read = true;
   return ok(res, item);
 };
+const socialError = (res: Response, cause: unknown) =>
+  res.status(400).json({ error: { code: "SOCIAL_VALIDATION", message: cause instanceof Error ? cause.message : "Não foi possível concluir esta ação." } });
+export const getMyProfile = (_: Request, res: Response) => ok(res, profileById(CURRENT_USER_ID)!);
+export const patchMyProfile = (req: Request, res: Response) => {
+  try { return ok(res, updateOwnProfile(req.body)); } catch (cause) { return socialError(res, cause); }
+};
+export const usernameAvailability = (req: Request, res: Response) => {
+  try { const username = validateUsername(String(req.query.username ?? ""), CURRENT_USER_ID); return ok(res, { username, available: true }); } catch (cause) { return ok(res, { username: String(req.query.username ?? ""), available: false, message: cause instanceof Error ? cause.message : "Indisponível" }); }
+};
+export const listUsers = (req: Request, res: Response) => ok(res, searchProfiles(String(req.query.search ?? "")));
+export const getUser = (req: Request, res: Response) => { const username = Array.isArray(req.params.username) ? req.params.username[0] : req.params.username; const profile = profileByUsername(username ?? ""); return profile ? ok(res, publicProfile(profile)) : notFound(res, "User"); };
+export const listFriends = (_: Request, res: Response) => ok(res, socialFriends());
+export const listFriendRequests = (_: Request, res: Response) => ok(res, socialRequests());
+export const createFriendRequest = (req: Request, res: Response) => { try { return res.status(201).json({ data: sendRequest(String(req.body.receiverId)) }); } catch (cause) { return socialError(res, cause); } };
+export const acceptFriendRequest = (req: Request, res: Response) => { try { return ok(res, acceptRequest(routeId(req))); } catch (cause) { return socialError(res, cause); } };
+export const declineFriendRequest = (req: Request, res: Response) => { try { return ok(res, setRequestStatus(routeId(req), "DECLINED")); } catch (cause) { return socialError(res, cause); } };
+export const cancelFriendRequest = (req: Request, res: Response) => { try { return ok(res, setRequestStatus(routeId(req), "CANCELLED")); } catch (cause) { return socialError(res, cause); } };
+export const deleteFriend = (req: Request, res: Response) => { try { removeFriend(routeId(req)); return res.status(204).send(); } catch (cause) { return socialError(res, cause); } };
+export const listConversations = (_: Request, res: Response) => ok(res, socialConversations());
+export const createDirectConversation = (req: Request, res: Response) => { try { return res.status(201).json({ data: directConversation(String(req.body.userId)) }); } catch (cause) { return socialError(res, cause); } };
+export const messagesForConversation = (req: Request, res: Response) => ok(res, socialMessages(routeId(req)));
+export const createMessage = (req: Request, res: Response) => { try { return res.status(201).json({ data: socialSendMessage(routeId(req), String(req.body.content ?? "")) }); } catch (cause) { return socialError(res, cause); } };
+export const markConversationRead = (req: Request, res: Response) => { try { return ok(res, socialMarkRead(routeId(req))); } catch (cause) { return socialError(res, cause); } };
+export const groupConversation = (req: Request, res: Response) => { try { return ok(res, ensureGroupConversation(routeId(req))); } catch (cause) { return socialError(res, cause); } };

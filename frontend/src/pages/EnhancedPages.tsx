@@ -46,6 +46,7 @@ import {
   SegmentedControl,
 } from "../components/ui";
 import { useAppData } from "../providers/AppDataProvider";
+import { GroupConversationPanel } from "./SocialPages";
 import {
   budgetFormSchema,
   groupFormSchema,
@@ -95,7 +96,7 @@ const cardColorClass = (color?: string) =>
 function PiggyIcon({ value }: { value?: string }) {
   const option = piggyIconOptions.find((item) => item.value === value);
   const Icon = option?.icon;
-  return Icon ? <Icon size={20} /> : <span>{value || "🐷"}</span>;
+  return Icon ? <Icon size={20} /> : <Target size={20} />;
 }
 const field = (
   label: string,
@@ -1021,7 +1022,7 @@ export function EnhancedPiggyBanks() {
 }
 
 export function EnhancedGroups() {
-  const { groups, hidden, createGroup, pending } = useAppData();
+  const { groups, hidden, createGroup, pending, friends, profile } = useAppData();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -1029,18 +1030,12 @@ export function EnhancedGroups() {
   const [target, setTarget] = useState("");
   const [date, setDate] = useState("");
   const [type, setType] = useState<Group["type"]>("TRIP");
-  const [participants, setParticipants] = useState<string[]>(["u-joao"]);
+  const [participants, setParticipants] = useState<string[]>([]);
   const [highlightId, setHighlightId] = useState<string | null>(null);
-  const participantOptions = [
-    { id: "u-joao", name: "João Braga" },
-    { id: "u-maria", name: "Maria Silva" },
-    { id: "u-lucas", name: "Lucas Costa" },
-  ];
+  const participantOptions = friends;
   const toggleParticipant = (id: string) =>
     setParticipants((items) =>
-      id === "u-joao"
-        ? items
-        : items.includes(id)
+      items.includes(id)
           ? items.filter((item) => item !== id)
           : [...items, id],
     );
@@ -1067,18 +1062,20 @@ export function EnhancedGroups() {
               .filter((item) => item.paymentSource === "GROUP_FUND")
               .reduce((total, item) => total + item.amount, 0);
           return (
-            <Card
+            <article
+              role="link"
+              tabIndex={0}
+              onClick={() => navigate(`/groups/${group.id}`)}
+              onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); navigate(`/groups/${group.id}`); } }}
               className={`group-card ${highlightId === group.id ? "item-highlight" : ""}`}
               key={group.id}
             >
               <div className="group-top">
-                <div className="group-emoji">
-                  {group.type === "TRIP" ? "✈️" : "✦"}
-                </div>
                 <div>
+                  <span className="group-type-overline">{groupLabel(group.type)}</span>
                   <h2>{group.name}</h2>
                   <p>
-                    {groupLabel(group.type)} ·{" "}
+                    {""}
                     {group.eventDate
                       ? formatShortDate(group.eventDate)
                       : "Sem data"}
@@ -1103,19 +1100,13 @@ export function EnhancedGroups() {
               <div className="group-footer">
                 <div className="avatar-group">
                   {group.members.map((member) => (
-                    <div className="avatar" key={member.id}>
+                    <button className="avatar" key={member.id} onClick={(event) => { event.stopPropagation(); const person = [...friends, profile].find((item) => item?.id === member.userId); if (person) navigate(`/u/${person.username}`); }}>
                       {initials(member.name)}
-                    </div>
+                    </button>
                   ))}
                 </div>
-                <Button
-                  variant="ghost"
-                  onClick={() => navigate(`/groups/${group.id}`)}
-                >
-                  Abrir
-                </Button>
               </div>
-            </Card>
+            </article>
           );
         })}
       </div>
@@ -1196,15 +1187,15 @@ export function EnhancedGroups() {
         </FormSection>
         <FormSection
           title="Participantes"
-          description="Selecione as pessoas da demonstração que farão parte deste planejamento."
+          description="Você já será adicionado como organizador. Selecione amigos para este planejamento."
         >
           <div className="choice-grid">
             {participantOptions.map((person) => (
               <ChoiceCard
                 key={person.id}
-                title={person.name}
+                title={person.displayName}
                 description={
-                  person.id === "u-joao" ? "Responsável" : "Participante"
+                  `@${person.username}`
                 }
                 selected={participants.includes(person.id)}
                 onClick={() => toggleParticipant(person.id)}
@@ -1271,6 +1262,7 @@ const tabs = [
   { key: "expenses", label: "Despesas" },
   { key: "members", label: "Participantes" },
   { key: "settlements", label: "Acertos" },
+  { key: "conversation", label: "Conversa" },
 ] as const;
 export function EnhancedGroupDetail() {
   const { id = "" } = useParams();
@@ -1621,6 +1613,12 @@ export function EnhancedGroupDetail() {
               detail="Não há transferências pendentes."
             />
           )}
+        </Card>
+      )}
+      {tab === "conversation" && (
+        <Card>
+          <div className="section-heading"><div><h2>Conversa do grupo</h2><p>Organizem os próximos passos sem misturar mensagens com lançamentos.</p></div></div>
+          <GroupConversationPanel groupId={group.id} />
         </Card>
       )}
       <Drawer open={mode !== null} onClose={() => setMode(null)}>

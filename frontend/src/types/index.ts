@@ -133,6 +133,53 @@ export interface Budget {
   createdAt: string;
   updatedAt: string;
 }
+export interface Profile {
+  id: string;
+  displayName: string;
+  username: string;
+  bio?: string;
+  email?: string;
+  avatarUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+export type FriendRelationship = "NONE" | "SENT" | "RECEIVED" | "FRIENDS";
+export interface FriendRequest {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED";
+  createdAt: string;
+  updatedAt: string;
+}
+export interface Conversation {
+  id: string;
+  type: "DIRECT" | "GROUP";
+  groupId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface ConversationMember {
+  conversationId: string;
+  userId: string;
+  joinedAt: string;
+  lastReadAt?: string;
+}
+export interface Message {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  content: string;
+  createdAt: string;
+}
+export interface ConversationView extends Conversation {
+  title: string;
+  subtitle?: string;
+  avatarUserId?: string;
+  lastMessage?: Message;
+  unreadCount: number;
+  memberIds: string[];
+}
 export interface CreditCard {
   id: string;
   userId: string;

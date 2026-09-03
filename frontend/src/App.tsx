@@ -11,6 +11,7 @@ import {
 import { Button, Card, PageHeader, Skeleton, Toast } from "./components/ui";
 import { Header, MobileNavigation, Sidebar } from "./components/layout";
 import { DashboardPage } from "./pages/DashboardPage";
+import { ProfilePage, SocialPage } from "./pages/SocialPages";
 import {
   EnhancedBudgets,
   EnhancedBudgetDetail,
@@ -25,24 +26,34 @@ import {
 } from "./pages/EnhancedPages";
 import { AppDataProvider, useAppData } from "./providers/AppDataProvider";
 import { preferences } from "./services/preferences";
+import { api } from "./services/api";
 
 function AuthPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const register = location.pathname === "/register";
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("joao@cofrin.app");
   const [password, setPassword] = useState("cofrin");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
   if (preferences.getBoolean("cofrin-demo"))
     return <Navigate to="/dashboard" replace />;
-  const submit = (event: FormEvent) => {
+  const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!/^\S+@\S+\.\S+$/.test(email))
       return setError("Informe um e-mail válido.");
     if (register && name.trim().length < 2)
       return setError("Informe seu nome.");
+    if (register) {
+      try {
+        const availability = await api.usernameAvailability(username);
+        if (!availability.available) return setError(availability.message ?? "Esse @ já está em uso.");
+      } catch {
+        return setError("Não foi possível validar seu @username agora.");
+      }
+    }
     if (register && (password.length < 6 || password !== confirm))
       return setError(
         "Use uma senha de pelo menos 6 caracteres e confirme corretamente.",
@@ -87,6 +98,16 @@ function AuthPage() {
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   placeholder="Seu nome"
+                />
+              </div>
+            )}
+            {register && (
+              <div className="form-field">
+                <label>@username</label>
+                <input
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value.replace(/^@+/, ""))}
+                  placeholder="joaobraga"
                 />
               </div>
             )}
@@ -168,6 +189,9 @@ function ShellContent({
       <Route path="/budgets" element={<EnhancedBudgets />} />
       <Route path="/budgets/:id" element={<EnhancedBudgetDetail />} />
       <Route path="/reports" element={<EnhancedReports />} />
+      <Route path="/social" element={<SocialPage />} />
+      <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/u/:username" element={<ProfilePage publicProfile />} />
       <Route path="/settings" element={<EnhancedSettings />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

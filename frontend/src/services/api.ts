@@ -13,6 +13,12 @@ import type {
   GroupSummary,
   InvoiceSummary,
   Notification,
+  Profile,
+  FriendRequest,
+  Conversation,
+  ConversationMember,
+  ConversationView,
+  Message,
   PiggyBank,
   PiggyInput,
   Settlement,
@@ -152,4 +158,25 @@ export const api = {
   listNotifications: () => request<Notification[]>("/notifications"),
   markNotificationRead: (id: string) =>
     request<Notification>(`/notifications/${id}/read`, { method: "PATCH" }),
+  getMyProfile: () => request<Profile>("/profiles/me"),
+  updateMyProfile: (data: Partial<Pick<Profile, "displayName" | "username" | "bio" | "avatarUrl">>) =>
+    request<Profile>("/profiles/me", { method: "PATCH", body: body(data) }),
+  usernameAvailability: (username: string) =>
+    request<{ username: string; available: boolean; message?: string }>(`/profiles/username-availability?username=${encodeURIComponent(username)}`),
+  searchUsers: (search: string) =>
+    request<(Profile & { relationship: "NONE" | "SENT" | "RECEIVED" | "FRIENDS" })[]>(`/users?search=${encodeURIComponent(search)}`),
+  getUser: (username: string) => request<Profile>(`/users/${encodeURIComponent(username)}`),
+  listFriends: () => request<Profile[]>("/friends"),
+  listFriendRequests: () => request<(FriendRequest & { profile: Profile; direction: "SENT" | "RECEIVED" })[]>("/friend-requests"),
+  sendFriendRequest: (receiverId: string) => request<FriendRequest>("/friend-requests", { method: "POST", body: body({ receiverId }) }),
+  cancelFriendRequest: (id: string) => request<FriendRequest>(`/friend-requests/${id}`, { method: "DELETE" }),
+  acceptFriendRequest: (id: string) => request<FriendRequest>(`/friend-requests/${id}/accept`, { method: "PATCH" }),
+  declineFriendRequest: (id: string) => request<FriendRequest>(`/friend-requests/${id}/decline`, { method: "PATCH" }),
+  removeFriend: (userId: string) => request<void>(`/friends/${userId}`, { method: "DELETE" }),
+  listConversations: () => request<ConversationView[]>("/conversations"),
+  createDirectConversation: (userId: string) => request<Conversation>("/conversations/direct", { method: "POST", body: body({ userId }) }),
+  listMessages: (id: string) => request<Message[]>(`/conversations/${id}/messages`),
+  sendMessage: (id: string, content: string) => request<Message>(`/conversations/${id}/messages`, { method: "POST", body: body({ content }) }),
+  markConversationRead: (id: string) => request<ConversationMember>(`/conversations/${id}/read`, { method: "PATCH" }),
+  getGroupConversation: (groupId: string) => request<Conversation>(`/groups/${groupId}/conversation`),
 };

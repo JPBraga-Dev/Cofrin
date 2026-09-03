@@ -19,6 +19,11 @@ import type {
   GroupExpense,
   GroupInput,
   Notification,
+  Conversation,
+  ConversationView,
+  FriendRequest,
+  Message,
+  Profile,
   PiggyBank,
   PiggyInput,
   Transaction,
@@ -26,7 +31,7 @@ import type {
 } from "../types";
 
 type Resource =
-  "transactions" | "piggies" | "groups" | "budgets" | "cards" | "notifications";
+  "transactions" | "piggies" | "groups" | "budgets" | "cards" | "notifications" | "social";
 export type GroupExpenseAction = Pick<
   GroupExpense,
   | "description"
@@ -51,6 +56,10 @@ type AppData = {
   budgets: Budget[];
   cards: CreditCard[];
   notifications: Notification[];
+  profile: Profile | null;
+  friends: Profile[];
+  friendRequests: (FriendRequest & { profile: Profile; direction: "SENT" | "RECEIVED" })[];
+  conversations: ConversationView[];
   dashboard: DashboardData | null;
   loading: boolean;
   error: string | null;
@@ -82,6 +91,19 @@ type AppData = {
   deleteBudget: (id: string) => Promise<void>;
   createCard: (data: CardInput) => Promise<CreditCard>;
   markNotificationRead: (id: string) => Promise<void>;
+  searchPeople: (query: string) => Promise<(Profile & { relationship: "NONE" | "SENT" | "RECEIVED" | "FRIENDS" })[]>;
+  updateProfile: (data: Partial<Pick<Profile, "displayName" | "username" | "bio" | "avatarUrl">>) => Promise<Profile>;
+  checkUsername: (username: string) => Promise<{ username: string; available: boolean; message?: string }>;
+  sendFriendRequest: (userId: string) => Promise<void>;
+  acceptFriendRequest: (id: string) => Promise<void>;
+  declineFriendRequest: (id: string) => Promise<void>;
+  cancelFriendRequest: (id: string) => Promise<void>;
+  removeFriend: (userId: string) => Promise<void>;
+  openDirectConversation: (userId: string) => Promise<Conversation>;
+  getGroupConversation: (groupId: string) => Promise<Conversation>;
+  getMessages: (conversationId: string) => Promise<Message[]>;
+  sendConversationMessage: (conversationId: string, content: string) => Promise<Message>;
+  markConversationRead: (conversationId: string) => Promise<void>;
 };
 const Context = createContext<AppData | null>(null);
 const replace = <T extends { id: string }>(items: T[], item: T) =>
@@ -94,6 +116,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [friends, setFriends] = useState<Profile[]>([]);
+  const [friendRequests, setFriendRequests] = useState<AppData["friendRequests"]>([]);
+  const [conversations, setConversations] = useState<ConversationView[]>([]);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -127,6 +153,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         nextBudgets,
         nextCards,
         nextNotifications,
+        nextProfile,
+        nextFriends,
+        nextFriendRequests,
+        nextConversations,
       ] = await Promise.all([
         api.dashboard(),
         api.listTransactions(),
@@ -135,6 +165,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         api.listBudgets(),
         api.listCreditCards(),
         api.listNotifications(),
+        api.getMyProfile(),
+        api.listFriends(),
+        api.listFriendRequests(),
+        api.listConversations(),
       ]);
       setDashboard(nextDashboard);
       setTransactions(nextTransactions);
@@ -143,6 +177,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       setBudgets(nextBudgets);
       setCards(nextCards);
       setNotifications(nextNotifications);
+      setProfile(nextProfile);
+      setFriends(nextFriends);
+      setFriendRequests(nextFriendRequests);
+      setConversations(nextConversations);
     } catch (cause) {
       setError(
         cause instanceof ApiError
@@ -191,6 +229,13 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     setGroups((items) => replace(items, group));
     return group;
   }, []);
+  const refreshSocial = useCallback(async () => {
+    const [nextProfile, nextFriends, nextRequests, nextConversations] = await Promise.all([api.getMyProfile(), api.listFriends(), api.listFriendRequests(), api.listConversations()]);
+    setProfile(nextProfile);
+    setFriends(nextFriends);
+    setFriendRequests(nextRequests);
+    setConversations(nextConversations);
+  }, []);
   const value = useMemo<AppData>(
     () => ({
       transactions,
@@ -199,6 +244,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       budgets,
       cards,
       notifications,
+      profile,
+      friends,
+      friendRequests,
+      conversations,
       dashboard,
       loading,
       error,
@@ -311,6 +360,19 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           const item = await api.markNotificationRead(id);
           setNotifications((items) => replace(items, item));
         }),
+      searchPeople: (query) => api.searchUsers(query),
+      checkUsername: (username) => api.usernameAvailability(username),
+      updateProfile: (data) => run(async () => { const item = await api.updateMyProfile(data); setProfile(item); return item; }),
+      sendFriendRequest: (userId) => run(async () => { await api.sendFriendRequest(userId); await refreshSocial(); }),
+      acceptFriendRequest: (id) => run(async () => { await api.acceptFriendRequest(id); await refreshSocial(); }),
+      declineFriendRequest: (id) => run(async () => { await api.declineFriendRequest(id); await refreshSocial(); }),
+      cancelFriendRequest: (id) => run(async () => { await api.cancelFriendRequest(id); await refreshSocial(); }),
+      removeFriend: (userId) => run(async () => { await api.removeFriend(userId); await refreshSocial(); }),
+      openDirectConversation: (userId) => run(async () => { const item = await api.createDirectConversation(userId); await refreshSocial(); return item; }),
+      getGroupConversation: (groupId) => api.getGroupConversation(groupId),
+      getMessages: (conversationId) => api.listMessages(conversationId),
+      sendConversationMessage: (conversationId, content) => run(async () => { const item = await api.sendMessage(conversationId, content); await refreshSocial(); return item; }),
+      markConversationRead: (conversationId) => run(async () => { await api.markConversationRead(conversationId); await refreshSocial(); }),
     }),
     [
       transactions,
@@ -319,6 +381,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       budgets,
       cards,
       notifications,
+      profile,
+      friends,
+      friendRequests,
+      conversations,
       dashboard,
       loading,
       error,
@@ -333,6 +399,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       refreshDashboard,
       refreshBudgets,
       refreshGroup,
+      refreshSocial,
     ],
   );
   return <Context.Provider value={value}>{children}</Context.Provider>;

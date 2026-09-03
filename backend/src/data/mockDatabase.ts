@@ -1,4 +1,4 @@
-import type { Budget, Group, PiggyBank, Transaction } from "../domain/types.js";
+import type { Budget, Conversation, ConversationMember, FriendRequest, Friendship, Group, Message, PiggyBank, Profile, Transaction } from "../domain/types.js";
 const now = "2026-08-31T12:00:00.000Z";
 const transactionHistory: Transaction[] = [
   [
@@ -118,6 +118,12 @@ export const mockDatabase: {
     createdAt: string;
     actionUrl?: string;
   }[];
+  profiles: Profile[];
+  friendRequests: FriendRequest[];
+  friendships: Friendship[];
+  conversations: Conversation[];
+  conversationMembers: ConversationMember[];
+  messages: Message[];
 } = {
   transactions: [
     {
@@ -214,7 +220,7 @@ export const mockDatabase: {
       currentAmount: 3150,
       monthlyContribution: 550,
       deadline: "2026-12-15",
-      icon: "✈️",
+      icon: "Plane",
       status: "ACTIVE",
       createdAt: now,
       updatedAt: now,
@@ -419,5 +425,33 @@ export const mockDatabase: {
       createdAt: now,
       actionUrl: "/piggy-banks",
     },
+  ],
+  profiles: [
+    { id: "u-joao", displayName: "João Braga", username: "joaobraga", bio: "Organizando a vida financeira e a próxima viagem.", email: "joao@cofrin.app", createdAt: now, updatedAt: now },
+    { id: "u-maria", displayName: "Maria Silva", username: "maria", bio: "Planejando bons momentos com as pessoas certas.", email: "maria@cofrin.app", createdAt: now, updatedAt: now },
+    { id: "u-lucas", displayName: "Lucas Costa", username: "lucas", bio: "Sempre pronto para a próxima aventura.", email: "lucas@cofrin.app", createdAt: now, updatedAt: now },
+    { id: "u-ana", displayName: "Ana Ribeiro", username: "ana.r", bio: "Metas pequenas também contam.", email: "ana@cofrin.app", createdAt: now, updatedAt: now },
+  ],
+  friendRequests: [
+    { id: "fr-maria-joao", senderId: "u-maria", receiverId: "u-joao", status: "PENDING", createdAt: now, updatedAt: now },
+  ],
+  friendships: [
+    { id: "friend-joao-lucas", userA: "u-joao", userB: "u-lucas", createdAt: now },
+  ],
+  conversations: [
+    { id: "c-direct-lucas", type: "DIRECT", createdAt: now, updatedAt: now },
+    { id: "c-group-g1", type: "GROUP", groupId: "g1", createdAt: now, updatedAt: now },
+  ],
+  conversationMembers: [
+    { conversationId: "c-direct-lucas", userId: "u-joao", joinedAt: now, lastReadAt: now },
+    { conversationId: "c-direct-lucas", userId: "u-lucas", joinedAt: now },
+    { conversationId: "c-group-g1", userId: "u-joao", joinedAt: now, lastReadAt: now },
+    { conversationId: "c-group-g1", userId: "u-maria", joinedAt: now },
+    { conversationId: "c-group-g1", userId: "u-lucas", joinedAt: now },
+  ],
+  messages: [
+    { id: "m-lucas-1", conversationId: "c-direct-lucas", senderId: "u-lucas", content: "Fechamos os detalhes da viagem hoje?", createdAt: "2026-08-30T18:20:00.000Z" },
+    { id: "m-jeri-1", conversationId: "c-group-g1", senderId: "u-maria", content: "Já olhei o hotel. Está dentro do orçamento.", createdAt: "2026-08-30T15:10:00.000Z" },
+    { id: "m-jeri-2", conversationId: "c-group-g1", senderId: "u-lucas", content: "Consigo fazer o aporte amanhã.", createdAt: "2026-08-30T15:18:00.000Z" },
   ],
 };

@@ -3,6 +3,7 @@ import {
   Bell,
   CalendarDays,
   ChevronLeft,
+  ChevronRight,
   CreditCard,
   LayoutDashboard,
   Menu,
@@ -59,13 +60,18 @@ export const navigationItems = [
     section: "análises",
   },
   {
+    to: "/social",
+    label: "Social",
+    icon: UsersRound,
+    section: "social",
+  },
+  {
     to: "/settings",
     label: "Configurações",
     icon: Settings,
     section: "análises",
   },
 ] as const;
-const user = { name: "João Braga", initials: "JB" };
 
 export function Sidebar({
   mobileOpen,
@@ -74,7 +80,9 @@ export function Sidebar({
   mobileOpen: boolean;
   setMobileOpen: (value: boolean) => void;
 }) {
-  const { compact, setCompact } = useAppData();
+  const { compact, setCompact, profile, friendRequests, conversations } = useAppData();
+  const navigate = useNavigate();
+  const socialUnread = friendRequests.filter((item) => item.direction === "RECEIVED").length + conversations.reduce((total, conversation) => total + conversation.unreadCount, 0);
   const render = (section: string) =>
     navigationItems
       .filter((item) => item.section === section)
@@ -84,10 +92,11 @@ export function Sidebar({
           to={to}
           onClick={() => setMobileOpen(false)}
           className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
-          title={compact ? label : undefined}
+          data-tooltip={compact ? label : undefined}
         >
           <Icon size={19} />
           <span>{label}</span>
+          {to === "/social" && socialUnread > 0 && <i className="nav-badge">{socialUnread}</i>}
         </NavLink>
       ));
   return (
@@ -123,16 +132,14 @@ export function Sidebar({
           {render("planejamento")}
           <p className="nav-label">Análises</p>
           {render("análises")}
+          <p className="nav-label">Social</p>
+          {render("social")}
         </nav>
-        <div className="sidebar-user">
-          <div className="avatar">{user.initials}</div>
-          {!compact && (
-            <div>
-              <strong>{user.name}</strong>
-              <small>Plano pessoal</small>
-            </div>
-          )}
-        </div>
+        {profile && <button className="sidebar-user" onClick={() => navigate("/profile")} data-tooltip={compact ? "Seu perfil" : undefined}>
+          <div className="avatar">{profile.displayName.split(" ").map((name) => name[0]).slice(0, 2).join("")}</div>
+          <div><strong>{profile.displayName}</strong><small>@{profile.username}</small></div>
+          {!compact && <ChevronRight size={15} />}
+        </button>}
       </aside>
     </>
   );
@@ -149,18 +156,27 @@ export function Header({ onMenu }: { onMenu: () => void }) {
     transactions,
     piggies,
     groups,
+    profile,
+    searchPeople,
   } = useAppData();
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [peopleResults, setPeopleResults] = useState<Awaited<ReturnType<typeof searchPeople>>>([]);
   const searchRef = useRef<HTMLDivElement>(null);
   const page =
     navigationItems.find((item) => item.to === location.pathname)?.label ??
     "cofrin";
+  useEffect(() => {
+    if (query.trim().length < 2) { setPeopleResults([]); return; }
+    const timeout = window.setTimeout(() => void searchPeople(query).then(setPeopleResults).catch(() => setPeopleResults([])), 260);
+    return () => window.clearTimeout(timeout);
+  }, [query, searchPeople]);
   const results = useMemo(() => {
     const value = query.trim().toLocaleLowerCase("pt-BR");
     if (!value) return [];
     return [
+      ...peopleResults.map((person) => ({ id: `u-${person.id}`, label: person.displayName, detail: `Pessoa · @${person.username}`, to: `/u/${person.username}` })),
       ...transactions
         .filter((item) =>
           `${item.description} ${categoryName(item.categoryId)}`
@@ -193,7 +209,7 @@ export function Header({ onMenu }: { onMenu: () => void }) {
           to: `/groups/${item.id}`,
         })),
     ];
-  }, [query, transactions, piggies, groups]);
+  }, [query, transactions, piggies, groups, peopleResults]);
   useEffect(() => {
     const close = (event: MouseEvent) => {
       if (
@@ -308,7 +324,7 @@ export function Header({ onMenu }: { onMenu: () => void }) {
             </div>
           )}
         </div>
-        <div className="avatar">{user.initials}</div>
+        <button className="avatar header-avatar" onClick={() => navigate("/profile")} aria-label="Abrir seu perfil">{profile?.displayName.split(" ").map((name) => name[0]).slice(0, 2).join("") ?? "JB"}</button>
       </div>
     </header>
   );
@@ -346,6 +362,7 @@ export function MobileNavigation() {
               "/budgets",
               "/reports",
               "/settings",
+              "/social",
             ].includes(item.to),
           )
           .map(({ to, label, icon: Icon }) => (
