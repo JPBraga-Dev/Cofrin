@@ -51,6 +51,7 @@ export type GroupExpenseAction = Pick<
 };
 type AppData = {
   transactions: Transaction[];
+  accounts: { id: string; name: string; balance: number }[];
   piggies: PiggyBank[];
   groups: Group[];
   budgets: Budget[];
@@ -79,11 +80,12 @@ type AppData = {
   createPiggy: (data: PiggyInput) => Promise<PiggyBank>;
   movePiggy: (
     id: string,
+    accountId: string,
     amount: number,
     type: "DEPOSIT" | "WITHDRAWAL",
   ) => Promise<PiggyBank>;
   createGroup: (data: GroupInput) => Promise<Group>;
-  addGroupContribution: (id: string, amount: number) => Promise<void>;
+  addGroupContribution: (id: string, sourceAccountId: string, amount: number) => Promise<void>;
   addGroupExpense: (id: string, data: GroupExpenseAction) => Promise<void>;
   markSettlementPaid: (groupId: string, settlementId: string) => Promise<void>;
   createBudget: (data: BudgetInput) => Promise<Budget>;
@@ -111,6 +113,7 @@ const replace = <T extends { id: string }>(items: T[], item: T) =>
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [accounts, setAccounts] = useState<{ id: string; name: string; balance: number }[]>([]);
   const [piggies, setPiggies] = useState<PiggyBank[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
@@ -148,6 +151,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       const [
         nextDashboard,
         nextTransactions,
+        nextAccounts,
         nextPiggies,
         nextGroups,
         nextBudgets,
@@ -160,6 +164,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       ] = await Promise.all([
         api.dashboard(),
         api.listTransactions(),
+        api.listAccounts(),
         api.listPiggyBanks(),
         api.listGroups(),
         api.listBudgets(),
@@ -172,6 +177,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       ]);
       setDashboard(nextDashboard);
       setTransactions(nextTransactions);
+      setAccounts(nextAccounts);
       setPiggies(nextPiggies);
       setGroups(nextGroups);
       setBudgets(nextBudgets);
@@ -239,6 +245,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AppData>(
     () => ({
       transactions,
+      accounts,
       piggies,
       groups,
       budgets,
@@ -262,21 +269,24 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         run(async () => {
           const item = await api.createTransaction(data);
           setTransactions((items) => [item, ...items]);
-          await Promise.all([refreshDashboard(), refreshBudgets()]);
+          const [, nextAccounts] = await Promise.all([refreshDashboard(), api.listAccounts(), refreshBudgets()]);
+          setAccounts(nextAccounts);
           return item;
         }),
       updateTransaction: (id, data) =>
         run(async () => {
           const item = await api.updateTransaction(id, data);
           setTransactions((items) => replace(items, item));
-          await Promise.all([refreshDashboard(), refreshBudgets()]);
+          const [, nextAccounts] = await Promise.all([refreshDashboard(), api.listAccounts(), refreshBudgets()]);
+          setAccounts(nextAccounts);
           return item;
         }),
       deleteTransaction: (id) =>
         run(async () => {
           await api.deleteTransaction(id);
           setTransactions((items) => items.filter((item) => item.id !== id));
-          await Promise.all([refreshDashboard(), refreshBudgets()]);
+          const [, nextAccounts] = await Promise.all([refreshDashboard(), api.listAccounts(), refreshBudgets()]);
+          setAccounts(nextAccounts);
         }),
       createPiggy: (data) =>
         run(async () => {
@@ -284,14 +294,18 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           setPiggies((items) => [item, ...items]);
           return item;
         }),
-      movePiggy: (id, amount, type) =>
+      movePiggy: (id, accountId, amount, type) =>
         run(async () => {
-          const item =
+          const result =
             type === "DEPOSIT"
-              ? await api.depositPiggyBank(id, amount)
-              : await api.withdrawPiggyBank(id, amount);
-          setPiggies((items) => replace(items, item));
-          return item;
+              ? await api.depositPiggyBank(id, accountId, amount)
+              : await api.withdrawPiggyBank(id, accountId, amount);
+          setPiggies((items) => replace(items, result.piggy));
+          setTransactions((items) => [result.transaction, ...items]);
+          const [nextDashboard, nextAccounts] = await Promise.all([api.dashboard(), api.listAccounts()]);
+          setDashboard(nextDashboard);
+          setAccounts(nextAccounts);
+          return result.piggy;
         }),
       createGroup: (data) =>
         run(async () => {
@@ -299,10 +313,14 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           setGroups((items) => [item, ...items]);
           return item;
         }),
-      addGroupContribution: (id, amount) =>
+      addGroupContribution: (id, sourceAccountId, amount) =>
         run(async () => {
-          await api.addContribution(id, { userId: "u-joao", amount });
-          await refreshGroup(id);
+          const result = await api.addContribution(id, { sourceAccountId, amount });
+          setGroups((items) => replace(items, result.group));
+          setTransactions((items) => [result.transaction, ...items]);
+          const [nextDashboard, nextAccounts] = await Promise.all([api.dashboard(), api.listAccounts()]);
+          setDashboard(nextDashboard);
+          setAccounts(nextAccounts);
         }),
       addGroupExpense: (id, data) =>
         run(async () => {
@@ -362,7 +380,17 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         }),
       searchPeople: (query) => api.searchUsers(query),
       checkUsername: (username) => api.usernameAvailability(username),
-      updateProfile: (data) => run(async () => { const item = await api.updateMyProfile(data); setProfile(item); return item; }),
+      updateProfile: (data) => run(async () => {
+        const item = await api.updateMyProfile(data);
+        setProfile(item);
+        setGroups((items) => items.map((group) => ({
+          ...group,
+          members: group.members.map((member) => member.userId === item.id ? { ...member, name: item.displayName } : member),
+        })));
+        await refreshSocial();
+        setToast("Perfil atualizado.");
+        return item;
+      }),
       sendFriendRequest: (userId) => run(async () => { await api.sendFriendRequest(userId); await refreshSocial(); }),
       acceptFriendRequest: (id) => run(async () => { await api.acceptFriendRequest(id); await refreshSocial(); }),
       declineFriendRequest: (id) => run(async () => { await api.declineFriendRequest(id); await refreshSocial(); }),
@@ -376,6 +404,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     }),
     [
       transactions,
+      accounts,
       piggies,
       groups,
       budgets,

@@ -17,6 +17,8 @@ import {
   createSplits,
   groupFund,
 } from "../services/groupFinanceService.js";
+import { accountBalance, accountById, accountsWithBalances } from "../services/accountService.js";
+import { transferAccountToGroupFund, transferAccountToPiggy, transferPiggyToAccount } from "../services/transferService.js";
 import {
   budgetSchema,
   creditCardSchema,
@@ -109,16 +111,18 @@ export async function dashboard(_: Request, res: Response) {
   const committed = transactions
     .filter((t) => t.status === "PENDING")
     .reduce((total, item) => total + item.amount, 0);
+  const accounts = accountsWithBalances();
   return ok(res, {
-    totalBalance: income - expenses,
+    totalBalance: accounts.reduce((total, account) => total + account.balance, 0),
     income,
     expenses,
     committed,
     savingsRate: calculateSavingsRate(income, expenses),
     upcomingBills: transactions.filter((t) => t.status === "PENDING"),
-    accounts: [{ name: "Conta principal", balance: income - expenses }],
+    accounts,
   });
 }
+export const listAccounts = (_: Request, res: Response) => ok(res, accountsWithBalances());
 export async function listTransactions(_: Request, res: Response) {
   return ok(res, await transactionRepository.list(), {
     total: mockDatabase.transactions.length,
@@ -130,6 +134,9 @@ export async function getTransaction(req: Request, res: Response) {
 }
 export async function createTransaction(req: Request, res: Response) {
   const value = transactionSchema.parse(req.body);
+  if (value.type === "TRANSFER") throw new Error("Transferências devem informar origem e destino.");
+  if (value.paymentMethod !== "CREDIT") accountById(value.accountId);
+  if (value.type === "EXPENSE" && value.paymentMethod !== "CREDIT" && value.amount > accountBalance(value.accountId)) throw new Error("Saldo insuficiente nesta conta.");
   const stamp = now();
   const item = await transactionRepository.create({
     id: id(),
@@ -145,6 +152,8 @@ export async function createTransaction(req: Request, res: Response) {
 }
 export async function updateTransaction(req: Request, res: Response) {
   const value = transactionSchema.partial().parse(req.body);
+  const existing = await transactionRepository.findById(routeId(req));
+  if (existing?.type === "TRANSFER" || value.type === "TRANSFER") throw new Error("Transferências internas não podem ser editadas como lançamento comum.");
   const item = await transactionRepository.update(routeId(req), {
     ...value,
     updatedAt: now(),
@@ -152,6 +161,8 @@ export async function updateTransaction(req: Request, res: Response) {
   return item ? ok(res, item) : notFound(res, "Transaction");
 }
 export async function removeTransaction(req: Request, res: Response) {
+  const existing = await transactionRepository.findById(routeId(req));
+  if (existing?.type === "TRANSFER") throw new Error("Transferências internas não podem ser removidas por esta tela.");
   return (await transactionRepository.delete(routeId(req)))
     ? res.status(204).send()
     : notFound(res, "Transaction");
@@ -195,31 +206,15 @@ export async function updatePiggy(req: Request, res: Response) {
   return item ? ok(res, item) : notFound(res, "Piggy bank");
 }
 export async function movePiggy(req: Request, res: Response) {
-  const piggy = await piggyBankRepository.findById(routeId(req));
-  if (!piggy) return notFound(res, "Piggy bank");
-  const movement = movementSchema.parse(req.body);
-  const isDeposit = req.path.endsWith("deposits");
-  const amount = isDeposit ? movement.amount : -movement.amount;
-  const next = Math.max(0, piggy.currentAmount + amount);
-  const updated = await piggyBankRepository.update(piggy.id, {
-    currentAmount: next,
-    status: next >= piggy.targetAmount ? "COMPLETED" : piggy.status,
-    movements: [
-      {
-        id: id(),
-        piggyBankId: piggy.id,
-        userId: "u-joao",
-        type: isDeposit ? "DEPOSIT" : "WITHDRAWAL",
-        amount: movement.amount,
-        date: movement.date ?? new Date().toISOString().slice(0, 10),
-        description: movement.description,
-        createdAt: now(),
-      },
-      ...piggy.movements,
-    ],
-    updatedAt: now(),
-  });
-  return ok(res, updated);
+  try {
+    const movement = movementSchema.parse(req.body);
+    const result = req.path.endsWith("deposits")
+      ? transferAccountToPiggy(routeId(req), movement.accountId, movement.amount, movement.date, movement.description)
+      : transferPiggyToAccount(routeId(req), movement.accountId, movement.amount, movement.date, movement.description);
+    return ok(res, result);
+  } catch (cause) {
+    return res.status(400).json({ error: { code: "TRANSFER_VALIDATION", message: cause instanceof Error ? cause.message : "Não foi possível concluir a transferência." } });
+  }
 }
 export async function listGroups(_: Request, res: Response) {
   return ok(res, (await groupRepository.list()).map(presentGroup));
@@ -301,28 +296,13 @@ export async function groupContributions(req: Request, res: Response) {
   return group ? ok(res, group.contributions) : notFound(res, "Group");
 }
 export async function addGroupContribution(req: Request, res: Response) {
-  const group = await groupRepository.findById(routeId(req));
-  if (!group) return notFound(res, "Group");
-  const value = groupContributionSchema.parse(req.body);
-  if (!group.members.some((member) => member.userId === value.userId))
-    return res.status(400).json({
-      error: {
-        code: "VALIDATION_ERROR",
-        message: "Contributor is not an active group member.",
-      },
-    });
-  const contribution = {
-    id: id(),
-    groupId: group.id,
-    date: value.date ?? new Date().toISOString().slice(0, 10),
-    createdAt: now(),
-    ...value,
-  };
-  await groupRepository.update(group.id, {
-    contributions: [...group.contributions, contribution],
-    updatedAt: now(),
-  });
-  return res.status(201).json({ data: contribution });
+  try {
+    const value = groupContributionSchema.parse(req.body);
+    const result = transferAccountToGroupFund(routeId(req), value.sourceAccountId, value.amount, value.date);
+    return res.status(201).json({ data: result });
+  } catch (cause) {
+    return res.status(400).json({ error: { code: "TRANSFER_VALIDATION", message: cause instanceof Error ? cause.message : "Não foi possível registrar a contribuição." } });
+  }
 }
 export async function groupExpenses(req: Request, res: Response) {
   const group = await groupRepository.findById(routeId(req));

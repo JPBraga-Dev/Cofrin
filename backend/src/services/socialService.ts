@@ -38,6 +38,11 @@ export function updateOwnProfile(data: Partial<Pick<Profile, "displayName" | "us
   profile.bio = data.bio?.trim().slice(0, 160) || undefined;
   profile.avatarUrl = data.avatarUrl?.trim() || undefined;
   profile.updatedAt = timestamp();
+  mockDatabase.groups.forEach((group) => {
+    group.members.forEach((member) => {
+      if (member.userId === profile.id) member.name = profile.displayName;
+    });
+  });
   return profile;
 }
 export function searchProfiles(search = "") {

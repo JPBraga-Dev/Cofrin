@@ -20,6 +20,11 @@ export interface Transaction {
   installmentNumber?: number;
   installmentCount?: number;
   parentTransactionId?: string;
+  sourceAccountId?: string;
+  destinationAccountId?: string;
+  sourcePiggyBankId?: string;
+  destinationPiggyBankId?: string;
+  destinationGroupId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,6 +36,8 @@ export interface PiggyBankMovement {
   amount: number;
   date: string;
   description?: string;
+  accountId?: string;
+  transactionId?: string;
   createdAt: string;
 }
 export interface PiggyBank {
@@ -40,6 +47,7 @@ export interface PiggyBank {
   description: string;
   targetAmount: number;
   currentAmount: number;
+  initialAmount?: number;
   monthlyContribution?: number;
   deadline?: string;
   icon?: string;
@@ -47,6 +55,15 @@ export interface PiggyBank {
   createdAt: string;
   updatedAt: string;
   movements: PiggyBankMovement[];
+}
+export interface Account {
+  id: string;
+  userId: string;
+  name: string;
+  type: "CHECKING" | "CASH" | "SAVINGS";
+  initialBalance: number;
+  createdAt: string;
+  updatedAt: string;
 }
 export interface GroupMember {
   id: string;
@@ -64,6 +81,8 @@ export interface GroupContribution {
   groupId: string;
   userId: string;
   amount: number;
+  sourceAccountId?: string;
+  financialTransactionId?: string;
   date: string;
   description?: string;
   status: "CONFIRMED" | "PENDING" | "CANCELLED";
@@ -109,6 +128,8 @@ export interface Group {
   description: string;
   type: "TRIP" | "EVENT" | "HOUSE" | "GIFT" | "COUPLE" | "GOAL" | "OTHER";
   targetAmount?: number;
+  /** Saldo coletivo declarado quando o grupo começou a ser controlado no Cofrin. */
+  initialFundAmount?: number;
   eventDate?: string;
   status: "PLANNING" | "ACTIVE" | "COMPLETED" | "CANCELLED";
   members: GroupMember[];

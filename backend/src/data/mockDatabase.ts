@@ -1,4 +1,4 @@
-import type { Budget, Conversation, ConversationMember, FriendRequest, Friendship, Group, Message, PiggyBank, Profile, Transaction } from "../domain/types.js";
+import type { Account, Budget, Conversation, ConversationMember, FriendRequest, Friendship, Group, Message, PiggyBank, Profile, Transaction } from "../domain/types.js";
 const now = "2026-08-31T12:00:00.000Z";
 const transactionHistory: Transaction[] = [
   [
@@ -72,25 +72,26 @@ const transactionHistory: Transaction[] = [
     "TRANSFER",
   ],
   ["t20", "Consulta médica", 220, "EXPENSE", "2026-06-14", "health", "PIX"],
-  ["t21", "Aporte viagem", 550, "TRANSFER", "2026-08-25", "goals", "TRANSFER"],
+  ["t21", "Transferência para viagem", 550, "TRANSFER", "2026-08-25", "goals", "TRANSFER"],
 ].map(([id, description, amount, type, date, categoryId, paymentMethod]) => ({
   id: id as string,
   userId: "u-joao",
   type: type as Transaction["type"],
-  nature: type === "TRANSFER" ? "PIGGY_BANK" : "PERSONAL",
+  nature: (type === "TRANSFER" ? "PIGGY_BANK" : "PERSONAL") as Transaction["nature"],
   description: description as string,
   amount: amount as number,
   date: date as string,
   categoryId: categoryId as string,
   accountId: "main",
   paymentMethod: paymentMethod as string,
-  status: type === "INCOME" ? "RECEIVED" : "PAID",
+  status: (type === "INCOME" ? "RECEIVED" : "PAID") as Transaction["status"],
   recurrenceType: "SINGLE" as const,
   createdAt: now,
   updatedAt: now,
-}));
+})).map((transaction): Transaction => transaction.id === "t21" ? { ...transaction, description: "Transferência para Viagem de fim de ano", sourceAccountId: "main", destinationPiggyBankId: "p1" } : transaction);
 export const mockDatabase: {
   transactions: Transaction[];
+  accounts: Account[];
   piggyBanks: PiggyBank[];
   groups: Group[];
   budgets: Budget[];
@@ -210,6 +211,10 @@ export const mockDatabase: {
     },
     ...transactionHistory,
   ],
+  accounts: [
+    { id: "main", userId: "u-joao", name: "Conta principal", type: "CHECKING", initialBalance: 12000, createdAt: now, updatedAt: now },
+    { id: "wallet", userId: "u-joao", name: "Carteira", type: "CASH", initialBalance: 420, createdAt: now, updatedAt: now },
+  ],
   piggyBanks: [
     {
       id: "p1",
@@ -218,6 +223,7 @@ export const mockDatabase: {
       description: "Chapada dos Veadeiros",
       targetAmount: 6000,
       currentAmount: 3150,
+      initialAmount: 2600,
       monthlyContribution: 550,
       deadline: "2026-12-15",
       icon: "Plane",
@@ -232,7 +238,9 @@ export const mockDatabase: {
           type: "DEPOSIT",
           amount: 550,
           date: "2026-08-25",
-          description: "Aporte de agosto",
+          description: "Conta principal → Viagem de fim de ano",
+          accountId: "main",
+          transactionId: "t21",
           createdAt: now,
         },
       ],
@@ -246,6 +254,7 @@ export const mockDatabase: {
       description: "Viagem da turma",
       type: "TRIP",
       targetAmount: 10000,
+      initialFundAmount: 5600,
       eventDate: "2026-11-12",
       status: "ACTIVE",
       createdAt: now,
@@ -285,35 +294,7 @@ export const mockDatabase: {
           balance: 80,
         },
       ],
-      contributions: [
-        {
-          id: "gc1",
-          groupId: "g1",
-          userId: "u-joao",
-          amount: 2200,
-          date: "2026-08-05",
-          status: "CONFIRMED",
-          createdAt: now,
-        },
-        {
-          id: "gc2",
-          groupId: "g1",
-          userId: "u-maria",
-          amount: 1800,
-          date: "2026-08-07",
-          status: "CONFIRMED",
-          createdAt: now,
-        },
-        {
-          id: "gc3",
-          groupId: "g1",
-          userId: "u-lucas",
-          amount: 1600,
-          date: "2026-08-10",
-          status: "CONFIRMED",
-          createdAt: now,
-        },
-      ],
+      contributions: [],
       expenses: [
         {
           id: "ge1",
@@ -452,6 +433,6 @@ export const mockDatabase: {
   messages: [
     { id: "m-lucas-1", conversationId: "c-direct-lucas", senderId: "u-lucas", content: "Fechamos os detalhes da viagem hoje?", createdAt: "2026-08-30T18:20:00.000Z" },
     { id: "m-jeri-1", conversationId: "c-group-g1", senderId: "u-maria", content: "Já olhei o hotel. Está dentro do orçamento.", createdAt: "2026-08-30T15:10:00.000Z" },
-    { id: "m-jeri-2", conversationId: "c-group-g1", senderId: "u-lucas", content: "Consigo fazer o aporte amanhã.", createdAt: "2026-08-30T15:18:00.000Z" },
+    { id: "m-jeri-2", conversationId: "c-group-g1", senderId: "u-lucas", content: "Consigo fazer a contribuição amanhã.", createdAt: "2026-08-30T15:18:00.000Z" },
   ],
 };

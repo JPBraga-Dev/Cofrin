@@ -347,18 +347,22 @@ export function DrawerFooter({
   submitLabel,
   loading = false,
   variant = "primary",
+  disabled = false,
+  onSubmit,
 }: {
   onCancel: () => void;
   submitLabel: string;
   loading?: boolean;
   variant?: "primary" | "pink";
+  disabled?: boolean;
+  onSubmit?: () => void;
 }) {
   return (
     <footer className="drawer-footer">
       <Button type="button" variant="secondary" onClick={onCancel}>
         Cancelar
       </Button>
-      <Button type="submit" variant={variant} loading={loading}>
+      <Button type="submit" variant={variant} loading={loading} disabled={disabled} onClick={onSubmit}>
         {submitLabel}
       </Button>
     </footer>

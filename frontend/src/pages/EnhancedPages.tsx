@@ -3,6 +3,7 @@ import {
   CalendarDays,
   Car,
   Check,
+  ChevronLeft,
   CreditCard,
   Download,
   Gift,
@@ -117,6 +118,7 @@ const field = (
 export function EnhancedTransactions() {
   const {
     transactions,
+    accounts,
     hidden,
     createTransaction,
     updateTransaction,
@@ -249,7 +251,7 @@ export function EnhancedTransactions() {
                         </small>
                       )}
                     </td>
-                    <td>{categoryName(item.categoryId)}</td>
+                    <td>{item.type === "TRANSFER" ? "Transferência" : categoryName(item.categoryId)}</td>
                     <td>{formatDate(item.date)}</td>
                     <td>{accountName(item.accountId)}</td>
                     <td>
@@ -269,7 +271,7 @@ export function EnhancedTransactions() {
                       />
                     </td>
                     <td>
-                      <Button
+                      {item.type !== "TRANSFER" && <Button
                         variant="ghost"
                         aria-expanded={actionId === item.id}
                         onClick={() =>
@@ -277,8 +279,8 @@ export function EnhancedTransactions() {
                         }
                       >
                         •••
-                      </Button>
-                      {actionId === item.id && (
+                      </Button>}
+                      {item.type !== "TRANSFER" && actionId === item.id && (
                         <div className="inline-actions">
                           <button
                             onClick={() => {
@@ -416,7 +418,7 @@ function TransactionDrawer({
   save: (value: TransactionInput, id?: string) => Promise<void>;
   loading: boolean;
 }) {
-  const { cards } = useAppData();
+  const { cards, accounts } = useAppData();
   const [draft, setDraft] = useState<TransactionInput>({
     description: "",
     amount: 0,
@@ -474,7 +476,7 @@ function TransactionDrawer({
   const installmentCount = Number(draft.installmentCount ?? 1);
   const isInstallment = draft.recurrenceType === "INSTALLMENT";
   const accountOptions = [
-    { id: "main", label: "Conta principal" },
+    ...accounts.map((account) => ({ id: account.id, label: account.name })),
     ...cards.map((card) => ({
       id: card.id,
       label: `${card.name} •••• ${card.lastFourDigits}`,
@@ -495,7 +497,6 @@ function TransactionDrawer({
             options={[
               { value: "EXPENSE", label: "Despesa", tone: "red" },
               { value: "INCOME", label: "Receita", tone: "green" },
-              { value: "TRANSFER", label: "Transferência", tone: "gold" },
             ]}
           />
         </FormSection>
@@ -506,9 +507,7 @@ function TransactionDrawer({
               autoFocus
               value={draft.description}
               placeholder={
-                draft.type === "TRANSFER"
-                  ? "Ex.: Reserva para viagem"
-                  : "Ex.: Notebook"
+                "Ex.: Notebook"
               }
               onChange={(event) =>
                 setDraft({ ...draft, description: event.target.value })
@@ -567,9 +566,7 @@ function TransactionDrawer({
             <label>
               {draft.type === "INCOME"
                 ? "Conta de destino"
-                : draft.type === "TRANSFER"
-                  ? "Conta de origem"
-                  : "Conta ou cartão"}
+                : "Conta ou cartão"}
             </label>
             <select
               value={draft.accountId}
@@ -673,7 +670,8 @@ function TransactionDrawer({
 }
 
 export function EnhancedPiggyBanks() {
-  const { piggies, hidden, createPiggy, movePiggy, pending } = useAppData();
+  const { piggies, hidden, createPiggy, movePiggy, accounts, pending } = useAppData();
+  const navigate = useNavigate();
   const [create, setCreate] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [highlightId, setHighlightId] = useState<string | null>(null);
@@ -747,6 +745,7 @@ export function EnhancedPiggyBanks() {
             className={`piggy-card ${highlightId === item.id ? "item-highlight" : ""}`}
             key={item.id}
           >
+            <article role="link" tabIndex={0} onClick={() => navigate(`/piggy-banks/${item.id}`)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); navigate(`/piggy-banks/${item.id}`); } }}>
             <div className="piggy-icon">
               <PiggyIcon value={item.icon} />
             </div>
@@ -762,7 +761,7 @@ export function EnhancedPiggyBanks() {
             />
             <div className="piggy-meta">
               <span>
-                {percent(item.currentAmount, item.targetAmount)}% concluído
+                {item.currentAmount >= item.targetAmount ? "Meta concluída" : `${percent(item.currentAmount, item.targetAmount)}% concluído`}
               </span>
               <span>
                 {item.deadline
@@ -770,24 +769,8 @@ export function EnhancedPiggyBanks() {
                   : "Sem prazo"}
               </span>
             </div>
-            <div className="piggy-actions">
-              <Button
-                variant="primary"
-                disabled={!item.monthlyContribution}
-                onClick={() =>
-                  void movePiggy(
-                    item.id,
-                    item.monthlyContribution ?? 0,
-                    "DEPOSIT",
-                  )
-                }
-              >
-                Aportar
-              </Button>
-              <Button variant="secondary" onClick={() => setSelectedId(item.id)}>
-                Gerenciar
-              </Button>
-            </div>
+            {item.currentAmount > item.targetAmount && <p className="piggy-over-target">{formatCurrency(item.currentAmount - item.targetAmount, hidden)} acima da meta</p>}
+            </article>
           </Card>
         ))}
       </div>
@@ -836,7 +819,7 @@ export function EnhancedPiggyBanks() {
         </FormSection>
         <FormSection
           title="Meta"
-          description="Você poderá fazer aportes e retiradas quando quiser."
+          description="Você poderá guardar ou retirar dinheiro pela tela de detalhe."
         >
           <div className="form-field">
             <label>Valor-meta</label>
@@ -859,10 +842,10 @@ export function EnhancedPiggyBanks() {
         </FormSection>
         <FormSection
           title="Ritmo"
-          description="Sem juros: a previsão considera apenas o aporte planejado."
+          description="Sem juros: a previsão considera apenas o valor mensal planejado."
         >
           <div className="form-field">
-            <label>Aporte mensal</label>
+            <label>Valor mensal planejado</label>
             <CurrencyInput
               value={draft.monthlyContribution}
               placeholder="500"
@@ -887,7 +870,7 @@ export function EnhancedPiggyBanks() {
             {Number(draft.monthlyContribution) > 0 &&
             Number(draft.targetAmount) > 0
               ? `Estimativa: aproximadamente ${Math.ceil(Number(draft.targetAmount) / Number(draft.monthlyContribution))} meses.`
-              : "Estimativa: defina meta e aporte mensal para calcular o prazo."}
+              : "Estimativa: defina meta e valor mensal para calcular o prazo."}
           </p>
         </div>
         <form
@@ -928,7 +911,7 @@ export function EnhancedPiggyBanks() {
                 options={[
                   {
                     value: "DEPOSIT",
-                    label: "Adicionar dinheiro",
+                    label: "Guardar dinheiro",
                     tone: "green",
                   },
                   {
@@ -989,14 +972,14 @@ export function EnhancedPiggyBanks() {
               loading={pending.mutation}
               onClick={async () => {
                 if (Number(amount) > 0) {
-                  await movePiggy(selected.id, Number(amount), movementType);
+                  await movePiggy(selected.id, accounts[0]?.id ?? "", Number(amount), movementType);
                   setAmount("");
                 }
               }}
             >
               {movementType === "DEPOSIT"
-                ? "Registrar aporte"
-                : "Registrar retirada"}
+                ? "Guardar dinheiro"
+                : "Retirar dinheiro"}
             </Button>
             <h3 className="drawer-subtitle">Histórico</h3>
             {selected.movements.map((movement) => (
@@ -1019,6 +1002,38 @@ export function EnhancedPiggyBanks() {
       </Drawer>
     </>
   );
+}
+
+export function PiggyBankDetail() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { piggies, accounts, transactions, hidden, movePiggy, pending } = useAppData();
+  const piggy = piggies.find((item) => item.id === id);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [direction, setDirection] = useState<"DEPOSIT" | "WITHDRAWAL">("DEPOSIT");
+  const [accountId, setAccountId] = useState("");
+  const [amount, setAmount] = useState("");
+  if (!piggy) return <EmptyState title="Porquinho não encontrado" detail="Essa reserva pode ter sido removida." />;
+  const account = accounts.find((item) => item.id === accountId);
+  const numericAmount = Number(amount || 0);
+  const available = direction === "DEPOSIT" ? account?.balance ?? 0 : piggy.currentAmount;
+  const invalidAmount = numericAmount <= 0 || numericAmount > available;
+  const nextPiggy = piggy.currentAmount + (direction === "DEPOSIT" ? numericAmount : -numericAmount);
+  const nextAccount = account ? account.balance + (direction === "DEPOSIT" ? -numericAmount : numericAmount) : 0;
+  const overTarget = piggy.currentAmount - piggy.targetAmount;
+  const history = transactions.filter((item) => item.destinationPiggyBankId === piggy.id || item.sourcePiggyBankId === piggy.id);
+  const begin = (nextDirection: "DEPOSIT" | "WITHDRAWAL") => { setDirection(nextDirection); setAccountId(""); setAmount(""); setDrawerOpen(true); };
+  const submit = async () => {
+    if (!account || invalidAmount) return;
+    await movePiggy(piggy.id, account.id, numericAmount, direction);
+    setDrawerOpen(false); setAmount(""); setAccountId("");
+  };
+  return <div className="piggy-detail-page">
+    <button className="back-link" onClick={() => navigate("/piggy-banks")}><ChevronLeft size={16} />Porquinhos</button>
+    <Card className="piggy-detail-hero"><div className="piggy-icon"><PiggyIcon value={piggy.icon} /></div><div><p className="eyebrow">Meta pessoal</p><h1>{piggy.name}</h1><p>{piggy.description}</p></div><div className="piggy-detail-actions"><Button onClick={() => begin("DEPOSIT")}>Guardar dinheiro</Button><Button variant="secondary" onClick={() => begin("WITHDRAWAL")} disabled={!piggy.currentAmount}>Retirar dinheiro</Button></div></Card>
+    <div className="piggy-detail-grid"><Card><p className="eyebrow">Reserva</p><div className="piggy-detail-amount"><span>Guardado</span><MoneyValue amount={piggy.currentAmount} hidden={hidden} size="large" /></div><div className="piggy-detail-amount"><span>Meta</span><strong>{formatCurrency(piggy.targetAmount, hidden)}</strong></div><Progress value={percent(piggy.currentAmount, piggy.targetAmount)} color={piggy.currentAmount >= piggy.targetAmount ? "#f5c451" : "#4ade80"} /><div className="piggy-detail-meta"><strong>{piggy.currentAmount >= piggy.targetAmount ? "Meta concluída" : `${percent(piggy.currentAmount, piggy.targetAmount)}% concluído`}</strong>{piggy.deadline && <span>{formatShortDate(piggy.deadline)}</span>}</div>{overTarget > 0 && <p className="piggy-over-target">{formatCurrency(overTarget, hidden)} acima da meta</p>}</Card><Card className="piggy-history"><div className="section-heading"><div><h2>Movimentações</h2><p>Transferências reais desta reserva.</p></div></div>{history.length ? history.map((movement) => { const incoming = movement.destinationPiggyBankId === piggy.id; return <div className="bill-row" key={movement.id}><span className={incoming ? "transfer-in" : "transfer-out"}>{incoming ? "+" : "−"}</span><div className="bill-info"><strong>{movement.description}</strong><small>{formatDate(movement.date)}</small></div><MoneyValue amount={movement.amount} type={incoming ? "income" : "expense"} hidden={hidden} size="small" /></div>; }) : <EmptyState title="Nenhuma transferência ainda" detail="Guarde dinheiro a partir de uma conta para iniciar esta reserva." />}</Card></div>
+    <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)}><DrawerHeader eyebrow="Transferência interna" title={direction === "DEPOSIT" ? "Guardar dinheiro" : "Retirar dinheiro"} description={direction === "DEPOSIT" ? `Destino: ${piggy.name}` : `Origem: ${piggy.name}`} />{direction === "DEPOSIT" && piggy.currentAmount >= piggy.targetAmount && <p className="transfer-note">Sua meta já foi atingida. Você pode guardar mais dinheiro se quiser aumentar a reserva.</p>}<FormSection title={direction === "DEPOSIT" ? "De onde vem o dinheiro?" : "Para onde enviar?"}>{accounts.map((item) => <button key={item.id} className={`transfer-account ${accountId === item.id ? "selected" : ""}`} onClick={() => setAccountId(item.id)}><span><strong>{item.name}</strong><small>Disponível: {formatCurrency(item.balance, hidden)}</small></span><Check size={16} /></button>)}</FormSection>{account && <><FormSection title={direction === "DEPOSIT" ? "Quanto deseja guardar?" : "Quanto deseja retirar?"}><div className="transfer-available">{direction === "DEPOSIT" ? `${account.name}: ${formatCurrency(account.balance, hidden)} disponíveis` : `${piggy.name}: ${formatCurrency(piggy.currentAmount, hidden)} disponíveis`}</div><CurrencyInput value={amount} placeholder="0,00" onChange={setAmount} />{numericAmount > available && <p className="form-error">Saldo insuficiente nesta conta.</p>}</FormSection>{numericAmount > 0 && !invalidAmount && <div className="transfer-preview"><p className="eyebrow">Resumo</p><div><span>{direction === "DEPOSIT" ? account.name : piggy.name}</span><strong>{formatCurrency(direction === "DEPOSIT" ? account.balance : piggy.currentAmount, hidden)} → {formatCurrency(direction === "DEPOSIT" ? nextAccount : nextPiggy, hidden)}</strong></div><div><span>{direction === "DEPOSIT" ? piggy.name : account.name}</span><strong>{formatCurrency(direction === "DEPOSIT" ? piggy.currentAmount : account.balance, hidden)} → {formatCurrency(direction === "DEPOSIT" ? nextPiggy : nextAccount, hidden)}</strong></div>{direction === "WITHDRAWAL" && piggy.currentAmount >= piggy.targetAmount && nextPiggy < piggy.targetAmount && <p className="transfer-note">Esta retirada fará a meta deixar de estar concluída.</p>}</div>}</>}<DrawerFooter onCancel={() => setDrawerOpen(false)} submitLabel={direction === "DEPOSIT" ? `Guardar ${numericAmount > 0 ? formatCurrency(numericAmount) : "dinheiro"}` : `Retirar ${numericAmount > 0 ? formatCurrency(numericAmount) : "dinheiro"}`} loading={pending.mutation} disabled={!account || invalidAmount} onSubmit={submit} /></Drawer>
+  </div>;
 }
 
 export function EnhancedGroups() {
@@ -1055,6 +1070,7 @@ export function EnhancedGroups() {
       <div className="group-grid">
         {groups.map((group) => {
           const fund =
+            (group.initialFundAmount ?? 0) +
             group.contributions
               .filter((item) => item.status === "CONFIRMED")
               .reduce((total, item) => total + item.amount, 0) -
@@ -1270,6 +1286,7 @@ export function EnhancedGroupDetail() {
   const navigate = useNavigate();
   const {
     groups,
+    accounts,
     hidden,
     addGroupContribution,
     addGroupExpense,
@@ -1282,6 +1299,8 @@ export function EnhancedGroupDetail() {
     : "overview";
   const [mode, setMode] = useState<"contribution" | "expense" | null>(null);
   const [amount, setAmount] = useState("");
+  const [contributionAccountId, setContributionAccountId] = useState("");
+  const [contributionError, setContributionError] = useState("");
   const [description, setDescription] = useState("");
   const [splitType, setSplitType] = useState<
     "EQUAL" | "PERCENTAGE" | "SHARES" | "MANUAL"
@@ -1308,7 +1327,7 @@ export function EnhancedGroupDetail() {
       </>
     );
   const fund =
-    group.contributions
+    (group.initialFundAmount ?? 0) + group.contributions
       .filter((item) => item.status === "CONFIRMED")
       .reduce((total, item) => total + item.amount, 0) -
     group.expenses
@@ -1323,6 +1342,8 @@ export function EnhancedGroupDetail() {
     .reduce((total, item) => total + item.amount, 0);
   const operationAmount = Number(amount || 0);
   const contributionAfter = fund + operationAmount;
+  const contributionAccount = accounts.find((item) => item.id === contributionAccountId);
+  const contributionInvalid = operationAmount <= 0 || !contributionAccount || operationAmount > (contributionAccount?.balance ?? 0);
   const percentageTotal = activeMembers.reduce(
     (total, member, index) =>
       total +
@@ -1488,10 +1509,10 @@ export function EnhancedGroupDetail() {
           <div className="section-heading">
             <div>
               <h2>Contribuições</h2>
-              <p>Aportes confirmados dos participantes.</p>
+              <p>Contribuições planejadas e realizadas do grupo.</p>
             </div>
-            <Button onClick={() => setMode("contribution")}>
-              Adicionar aporte
+            <Button onClick={() => { setContributionAccountId(""); setContributionError(""); setAmount(""); setMode("contribution"); }}>
+              Contribuir
             </Button>
           </div>
           {group.contributions.map((item) => (
@@ -1507,9 +1528,9 @@ export function EnhancedGroupDetail() {
                   {group.members.find((member) => member.userId === item.userId)
                     ?.name ?? "Participante"}
                 </strong>
-                <small>{formatDate(item.date)}</small>
+                <small>{formatDate(item.date)} · {item.status === "CONFIRMED" ? "Realizada" : "Planejada"}</small>
               </div>
-              <MoneyValue amount={item.amount} type="income" hidden={hidden} />
+              <MoneyValue amount={item.amount} type={item.status === "CONFIRMED" ? "income" : undefined} hidden={hidden} />
             </div>
           ))}
         </Card>
@@ -1625,17 +1646,17 @@ export function EnhancedGroupDetail() {
         <DrawerHeader
           eyebrow={
             mode === "contribution"
-              ? "Aporte no grupo"
+              ? "Transferência para o grupo"
               : "Despesa compartilhada"
           }
           title={
             mode === "contribution"
-              ? "Registrar contribuição"
+              ? "Contribuir para o grupo"
               : "Registrar despesa"
           }
           description={
             mode === "contribution"
-              ? "Veja como seu aporte altera o fundo coletivo."
+              ? "Escolha uma conta de origem. O dinheiro será transferido para o fundo do grupo."
               : "Defina a despesa, quem pagou e como cada pessoa participa."
           }
         />
@@ -1660,36 +1681,39 @@ export function EnhancedGroupDetail() {
                 </div>
               </div>
             </div>
-            <FormSection title="Valor da contribuição">
+            <FormSection title="De onde vem o dinheiro?">
+              {accounts.map((account) => <button key={account.id} className={`transfer-account ${contributionAccountId === account.id ? "selected" : ""}`} onClick={() => { setContributionAccountId(account.id); setContributionError(""); }}><span><strong>{account.name}</strong><small>Disponível: {formatCurrency(account.balance, hidden)}</small></span><Check size={16} /></button>)}
+            </FormSection>
+            {contributionAccount && <FormSection title="Valor da contribuição">
               <div className="form-field">
-                <label>Quanto você quer adicionar?</label>
+                <label>Quanto deseja transferir?</label>
                 <CurrencyInput
                   value={amount}
                   placeholder="350"
-                  onChange={setAmount}
+                  onChange={(value) => { setAmount(value); setContributionError(""); }}
                 />
               </div>
-            </FormSection>
-            <div className="live-summary">
-              <h4>Preview da contribuição</h4>
+              {operationAmount > contributionAccount.balance && <p className="form-error">Saldo insuficiente nesta conta.</p>}
+            </FormSection>}
+            {contributionAccount && operationAmount > 0 && !contributionInvalid && <div className="live-summary">
+              <h4>Depois desta contribuição</h4>
               <div className="impact-grid">
                 <div>
-                  <span>Você está adicionando</span>
-                  {formatCurrency(operationAmount, hidden)}
+                  <span>{contributionAccount.name}</span>
+                  {formatCurrency(contributionAccount.balance, hidden)} → {formatCurrency(contributionAccount.balance - operationAmount, hidden)}
                 </div>
                 <div>
-                  <span>Fundo</span>
-                  {formatCurrency(fund, hidden)} →{" "}
-                  {formatCurrency(contributionAfter, hidden)}
+                  <span>Fundo do grupo</span>
+                  {formatCurrency(fund, hidden)} → {formatCurrency(contributionAfter, hidden)}
                 </div>
                 <div>
-                  <span>Progresso</span>
-                  {group.targetAmount
-                    ? `${percent(fund, group.targetAmount)}% → ${percent(contributionAfter, group.targetAmount)}%`
-                    : "Sem meta"}
+                  <span>Sua contribuição total</span>
+                  {formatCurrency(contributionByMe, hidden)} → {formatCurrency(contributionByMe + operationAmount, hidden)}
                 </div>
+                {group.targetAmount && <div><span>Progresso</span>{percent(fund, group.targetAmount)}% → {percent(contributionAfter, group.targetAmount)}%</div>}
               </div>
-            </div>
+            </div>}
+            {contributionError && <p className="form-error">{contributionError}</p>}
           </>
         ) : (
           <>
@@ -1929,11 +1953,18 @@ export function EnhancedGroupDetail() {
         )}
         <Button
           loading={pending.mutation}
+          disabled={mode === "contribution" ? contributionInvalid : false}
           onClick={async () => {
             if (operationAmount <= 0) return;
-            if (mode === "contribution")
-              await addGroupContribution(group.id, operationAmount);
-            else if (
+            if (mode === "contribution") {
+              if (!contributionAccount) return;
+              try {
+                await addGroupContribution(group.id, contributionAccount.id, operationAmount);
+              } catch {
+                setContributionError("Não foi possível registrar a contribuição. Nenhum valor foi movimentado.");
+                return;
+              }
+            } else if (
               description.trim() &&
               (splitType !== "PERCENTAGE" || percentageTotal === 100) &&
               (splitType !== "MANUAL" || manualTotal === operationAmount)
@@ -1970,11 +2001,12 @@ export function EnhancedGroupDetail() {
               });
             setAmount("");
             setDescription("");
+            setContributionAccountId("");
             setMode(null);
           }}
         >
           {mode === "contribution"
-            ? "Confirmar contribuição"
+            ? `Contribuir ${operationAmount > 0 ? formatCurrency(operationAmount) : ""}`
             : "Salvar despesa"}
         </Button>
       </Drawer>

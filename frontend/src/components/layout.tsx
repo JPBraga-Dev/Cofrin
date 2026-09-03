@@ -69,7 +69,7 @@ export const navigationItems = [
     to: "/settings",
     label: "Configurações",
     icon: Settings,
-    section: "análises",
+    section: "sistema",
   },
 ] as const;
 
@@ -93,6 +93,7 @@ export function Sidebar({
           onClick={() => setMobileOpen(false)}
           className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
           data-tooltip={compact ? label : undefined}
+          aria-label={compact ? label : undefined}
         >
           <Icon size={19} />
           <span>{label}</span>
@@ -108,15 +109,16 @@ export function Sidebar({
       <aside
         className={`sidebar ${compact ? "compact" : ""} ${mobileOpen ? "open" : ""}`}
       >
-        <div className="brand">
+        <div className="sidebar-header">
+          <div className="brand">
           <span className="logo-mark">C</span>
           {!compact && <span>cofrin</span>}
           <button
             className="collapse"
             onClick={() => setCompact(!compact)}
-            aria-label="Compactar menu"
+            aria-label={compact ? "Expandir menu" : "Compactar menu"}
           >
-            <ChevronLeft size={16} />
+            {compact ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
           </button>
           <button
             className="mobile-close"
@@ -125,21 +127,22 @@ export function Sidebar({
           >
             <X size={20} />
           </button>
+          </div>
         </div>
-        <nav>
-          {render("principal")}
-          <p className="nav-label">Planejamento</p>
-          {render("planejamento")}
-          <p className="nav-label">Análises</p>
-          {render("análises")}
-          <p className="nav-label">Social</p>
-          {render("social")}
+        <nav className="sidebar-nav" aria-label="Navegação principal">
+          <div className="nav-section">{render("principal")}</div>
+          <div className="nav-section"><p className="nav-label">Planejamento</p>{render("planejamento")}</div>
+          <div className="nav-section"><p className="nav-label">Análises</p>{render("análises")}</div>
+          <div className="nav-section"><p className="nav-label">Social</p>{render("social")}</div>
+          <div className="nav-section nav-system">{render("sistema")}</div>
         </nav>
-        {profile && <button className="sidebar-user" onClick={() => navigate("/profile")} data-tooltip={compact ? "Seu perfil" : undefined}>
+        <footer className="sidebar-footer">
+        {profile && <button className="sidebar-user" onClick={() => navigate("/profile")} data-tooltip={compact ? `${profile.displayName} · @${profile.username}` : undefined} aria-label="Abrir seu perfil">
           <div className="avatar">{profile.displayName.split(" ").map((name) => name[0]).slice(0, 2).join("")}</div>
           <div><strong>{profile.displayName}</strong><small>@{profile.username}</small></div>
           {!compact && <ChevronRight size={15} />}
         </button>}
+        </footer>
       </aside>
     </>
   );
@@ -164,9 +167,13 @@ export function Header({ onMenu }: { onMenu: () => void }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [peopleResults, setPeopleResults] = useState<Awaited<ReturnType<typeof searchPeople>>>([]);
   const searchRef = useRef<HTMLDivElement>(null);
-  const page =
-    navigationItems.find((item) => item.to === location.pathname)?.label ??
-    "cofrin";
+  const contextualTitles: Record<string, { title: string; description: string }> = {
+    "/profile": { title: "Perfil", description: "Sua identidade no Cofrin" },
+    "/social": { title: "Social", description: "Amigos e conversas" },
+    "/settings": { title: "Configurações", description: "Preferências do Cofrin" },
+  };
+  const contextual = contextualTitles[location.pathname];
+  const page = contextual?.title ?? navigationItems.find((item) => item.to === location.pathname)?.label ?? "cofrin";
   useEffect(() => {
     if (query.trim().length < 2) { setPeopleResults([]); return; }
     const timeout = window.setTimeout(() => void searchPeople(query).then(setPeopleResults).catch(() => setPeopleResults([])), 260);
@@ -248,12 +255,7 @@ export function Header({ onMenu }: { onMenu: () => void }) {
       </button>
       <div className="header-title">
         <span>{page}</span>
-        <small>
-          {new Intl.DateTimeFormat("pt-BR", {
-            month: "long",
-            year: "numeric",
-          }).format(new Date())}
-        </small>
+        <small>{contextual?.description ?? new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(new Date())}</small>
       </div>
       <div className="header-actions">
         <div className="search-wrap" ref={searchRef}>

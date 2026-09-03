@@ -20,6 +20,7 @@ import {
   EnhancedGroupDetail,
   EnhancedGroups,
   EnhancedPiggyBanks,
+  PiggyBankDetail,
   EnhancedReports,
   EnhancedSettings,
   EnhancedTransactions,
@@ -184,6 +185,7 @@ function ShellContent({
       <Route path="/calendar" element={<EnhancedCalendar />} />
       <Route path="/cards" element={<EnhancedCards />} />
       <Route path="/piggy-banks" element={<EnhancedPiggyBanks />} />
+      <Route path="/piggy-banks/:id" element={<PiggyBankDetail />} />
       <Route path="/groups" element={<EnhancedGroups />} />
       <Route path="/groups/:id" element={<EnhancedGroupDetail />} />
       <Route path="/budgets" element={<EnhancedBudgets />} />

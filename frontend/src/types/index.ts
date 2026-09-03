@@ -20,6 +20,11 @@ export interface Transaction {
   creditCardId?: string;
   installmentNumber?: number;
   installmentCount?: number;
+  sourceAccountId?: string;
+  destinationAccountId?: string;
+  sourcePiggyBankId?: string;
+  destinationPiggyBankId?: string;
+  destinationGroupId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -32,6 +37,8 @@ export interface PiggyMovement {
   amount: number;
   date: string;
   description?: string;
+  accountId?: string;
+  transactionId?: string;
   createdAt: string;
 }
 export interface PiggyBank {
@@ -41,6 +48,7 @@ export interface PiggyBank {
   description: string;
   targetAmount: number;
   currentAmount: number;
+  initialAmount?: number;
   monthlyContribution?: number;
   deadline?: string;
   icon?: string;
@@ -48,6 +56,19 @@ export interface PiggyBank {
   createdAt: string;
   updatedAt: string;
   movements: PiggyMovement[];
+}
+export interface Account {
+  id: string;
+  userId: string;
+  name: string;
+  type: "CHECKING" | "CASH" | "SAVINGS";
+  initialBalance: number;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface PiggyTransferResult {
+  piggy: PiggyBank;
+  transaction: Transaction;
 }
 
 export interface GroupMember {
@@ -66,10 +87,17 @@ export interface GroupContribution {
   groupId: string;
   userId: string;
   amount: number;
+  sourceAccountId?: string;
+  financialTransactionId?: string;
   date: string;
   description?: string;
   status: "CONFIRMED" | "PENDING" | "CANCELLED";
   createdAt: string;
+}
+export interface GroupContributionTransferResult {
+  group: Group;
+  contribution: GroupContribution;
+  transaction: Transaction;
 }
 export interface GroupExpenseSplit {
   id: string;
@@ -111,6 +139,8 @@ export interface Group {
   description: string;
   type: "TRIP" | "EVENT" | "HOUSE" | "GIFT" | "COUPLE" | "GOAL" | "OTHER";
   targetAmount?: number;
+  /** Saldo coletivo declarado quando o grupo começou a ser controlado no Cofrin. */
+  initialFundAmount?: number;
   eventDate?: string;
   status: "PLANNING" | "ACTIVE" | "COMPLETED" | "CANCELLED";
   members: GroupMember[];
@@ -229,7 +259,7 @@ export interface DashboardData {
   committed: number;
   savingsRate: number;
   upcomingBills: Transaction[];
-  accounts: { name: string; balance: number }[];
+  accounts: { id: string; name: string; balance: number }[];
 }
 
 export type TransactionInput = Omit<

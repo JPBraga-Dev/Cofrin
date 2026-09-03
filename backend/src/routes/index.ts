@@ -3,6 +3,7 @@ import * as c from "../controllers/controllers.js";
 export const api = Router();
 api.get("/health", c.health);
 api.get("/dashboard", c.dashboard);
+api.get("/accounts", c.listAccounts);
 api.route("/transactions").get(c.listTransactions).post(c.createTransaction);
 api
   .route("/transactions/:id")

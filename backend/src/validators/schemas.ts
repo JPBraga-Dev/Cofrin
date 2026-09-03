@@ -29,6 +29,7 @@ export const piggySchema = z.object({
   icon: z.string().optional(),
 });
 export const movementSchema = z.object({
+  accountId: z.string().min(1),
   amount: z.number().positive(),
   date: z.string().date().optional(),
   description: z.string().optional(),
@@ -48,11 +49,9 @@ export const groupMemberSchema = z.object({
   expectedContribution: z.number().nonnegative().default(0),
 });
 export const groupContributionSchema = z.object({
-  userId: z.string().min(1),
+  sourceAccountId: z.string().min(1),
   amount: z.number().positive(),
   date: z.string().date().optional(),
-  description: z.string().optional(),
-  status: z.enum(["CONFIRMED", "PENDING", "CANCELLED"]).default("CONFIRMED"),
 });
 export const groupExpenseSchema = z.object({
   description: z.string().min(1),

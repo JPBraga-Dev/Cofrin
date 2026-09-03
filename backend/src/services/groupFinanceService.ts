@@ -81,7 +81,7 @@ export function calculateGroupBalances(group: Group) {
   }));
 }
 export function groupFund(group: Group) {
-  const raised = group.contributions
+  const raised = (group.initialFundAmount ?? 0) + group.contributions
     .filter((c) => c.status === "CONFIRMED")
     .reduce((total, c) => total + c.amount, 0);
   const paidFromFund = group.expenses

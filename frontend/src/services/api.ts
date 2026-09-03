@@ -7,6 +7,7 @@ import type {
   Group,
   GroupBalance,
   GroupContribution,
+  GroupContributionTransferResult,
   GroupExpense,
   GroupInput,
   GroupMember,
@@ -24,6 +25,7 @@ import type {
   Settlement,
   Transaction,
   TransactionInput,
+  PiggyTransferResult,
 } from "../types";
 
 const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api";
@@ -59,6 +61,7 @@ const body = (data: unknown) => JSON.stringify(data);
 
 export const api = {
   dashboard: () => request<DashboardData>("/dashboard"),
+  listAccounts: () => request<{ id: string; name: string; balance: number }[]>("/accounts"),
   listTransactions: () => request<Transaction[]>("/transactions"),
   getTransaction: (id: string) => request<Transaction>(`/transactions/${id}`),
   createTransaction: (data: TransactionInput) =>
@@ -79,15 +82,15 @@ export const api = {
       method: "PUT",
       body: body(data),
     }),
-  depositPiggyBank: (id: string, amount: number, description?: string) =>
-    request<PiggyBank>(`/piggy-banks/${id}/deposits`, {
+  depositPiggyBank: (id: string, accountId: string, amount: number, description?: string) =>
+    request<PiggyTransferResult>(`/piggy-banks/${id}/deposits`, {
       method: "POST",
-      body: body({ amount, description }),
+      body: body({ accountId, amount, description }),
     }),
-  withdrawPiggyBank: (id: string, amount: number, description?: string) =>
-    request<PiggyBank>(`/piggy-banks/${id}/withdrawals`, {
+  withdrawPiggyBank: (id: string, accountId: string, amount: number, description?: string) =>
+    request<PiggyTransferResult>(`/piggy-banks/${id}/withdrawals`, {
       method: "POST",
-      body: body({ amount, description }),
+      body: body({ accountId, amount, description }),
     }),
   listGroups: () => request<Group[]>("/groups"),
   getGroup: (id: string) => request<Group>(`/groups/${id}`),
@@ -111,10 +114,10 @@ export const api = {
     request<GroupContribution[]>(`/groups/${id}/contributions`),
   addContribution: (
     id: string,
-    data: Pick<GroupContribution, "userId" | "amount"> &
-      Partial<Pick<GroupContribution, "date" | "description" | "status">>,
+    data: Pick<GroupContribution, "sourceAccountId" | "amount"> &
+      Partial<Pick<GroupContribution, "date">>,
   ) =>
-    request<GroupContribution>(`/groups/${id}/contributions`, {
+    request<GroupContributionTransferResult>(`/groups/${id}/contributions`, {
       method: "POST",
       body: body(data),
     }),
