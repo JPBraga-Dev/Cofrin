@@ -2,7 +2,20 @@ import { useState } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import { CurrencyInput, Drawer, DrawerHeader } from "./ui";
+import { CurrencyInput, Drawer, DrawerHeader, PasswordInput } from "./ui";
+
+describe("PasswordInput", () => {
+  it("alternates visibility without replacing the field or disabling autocomplete", async () => {
+    function Harness() { const [value, setValue] = useState("segredo123"); return <PasswordInput id="password-test" aria-label="Senha de teste" autoComplete="current-password" value={value} onChange={setValue} />; }
+    render(<Harness />);
+    const input = screen.getByLabelText("Senha de teste");
+    expect(input).toHaveAttribute("type", "password");
+    expect(input).toHaveAttribute("autocomplete", "current-password");
+    await userEvent.click(screen.getByRole("button", { name: "Mostrar senha" }));
+    expect(input).toHaveAttribute("type", "text");
+    expect(screen.getByRole("button", { name: "Ocultar senha" })).toHaveAttribute("aria-pressed", "true");
+  });
+});
 
 describe("CurrencyInput", () => {
   it("normalizes BRL decimal input and reports integer cents", () => {

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { CalendarDays, Check, Download, KeyRound, LogOut, MonitorSmartphone, Plus, Target, WalletCards } from "lucide-react";
 import { Area, AreaChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Badge, Button, Card, ChoiceCard, CurrencyInput, Drawer, DrawerFooter, DrawerHeader, EmptyState, FormHint, FormSection, MoneyValue, PageHeader, Progress } from "../components/ui";
+import { Badge, Button, Card, ChoiceCard, CurrencyInput, Drawer, DrawerFooter, DrawerHeader, EmptyState, FormHint, FormSection, MoneyValue, PageHeader, PasswordInput, Progress } from "../components/ui";
 import { useAppData } from "../providers/AppDataProvider";
 import { useAuth } from "../providers/AuthProvider";
 import { ApiError } from "../services/api";
@@ -813,6 +813,36 @@ export function EnhancedReports() {
   );
 }
 
+function describeSessionDevice(userAgent?: string) {
+  if (!userAgent) return "Navegador não identificado";
+  const browserPatterns: [RegExp, string][] = [
+    [/Edg\/([\d.]+)/, "Edge"],
+    [/Firefox\/([\d.]+)/, "Firefox"],
+    [/(?:Chrome|CriOS)\/([\d.]+)/, "Chrome"],
+    [/Version\/([\d.]+).*Safari\//, "Safari"],
+  ];
+  const browser = browserPatterns.map(([pattern, name]) => {
+    const match = userAgent.match(pattern);
+    return match ? `${name} ${match[1].split(".")[0]}` : "";
+  }).find(Boolean);
+  const system = /Windows NT/i.test(userAgent) ? "Windows"
+    : /Android/i.test(userAgent) ? "Android"
+      : /iPhone|iPad|iPod/i.test(userAgent) ? "iOS"
+        : /Mac OS X/i.test(userAgent) ? "macOS"
+          : /Linux/i.test(userAgent) ? "Linux" : "";
+  return [browser, system].filter(Boolean).join(" · ") || "Navegador não identificado";
+}
+
+function describeLastSeen(lastSeenAt: string) {
+  const elapsed = Math.max(0, Date.now() - Date.parse(lastSeenAt));
+  const minutes = Math.floor(elapsed / 60_000);
+  if (minutes < 1) return "Visto agora";
+  if (minutes < 60) return `Visto há ${minutes} ${minutes === 1 ? "minuto" : "minutos"}`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Visto há ${hours} ${hours === 1 ? "hora" : "horas"}`;
+  return `Visto em ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(lastSeenAt))}`;
+}
+
 export function EnhancedSettings() {
   const { hidden, setHidden, error, loading, refresh } = useAppData();
   const { changePassword, listSessions, revokeOtherSessions, logout } = useAuth();
@@ -831,13 +861,16 @@ export function EnhancedSettings() {
   useEffect(() => { if (tab !== "security") return; void listSessions().then(setSessions).catch(() => setSessionError("Não foi possível carregar suas sessões.")); }, [tab, listSessions]);
   const switchTab = (next: "preferences" | "security") => { const nextParams = new URLSearchParams(params); if (next === "security") nextParams.set("tab", "security"); else nextParams.delete("tab"); setParams(nextParams); };
   return (
-    <>
+    <div className="settings-page">
       <PageHeader
         title="Configurações"
-        description="Controle suas preferências no cofrin."
+        description="Controle suas preferências no Cofrin."
       />
-      <div className="settings-tabs" role="tablist"><button className={tab === "preferences" ? "active" : ""} onClick={() => switchTab("preferences")}>Preferências</button><button className={tab === "security" ? "active" : ""} onClick={() => switchTab("security")}>Segurança</button></div>
-      {tab === "preferences" ? <Card className="settings-list">
+      <div className="settings-tabs" role="tablist" aria-label="Seções das configurações">
+        <button id="preferences-tab" type="button" role="tab" aria-selected={tab === "preferences"} aria-controls="preferences-panel" className={tab === "preferences" ? "active" : ""} onClick={() => switchTab("preferences")}>Preferências</button>
+        <button id="security-tab" type="button" role="tab" aria-selected={tab === "security"} aria-controls="security-panel" className={tab === "security" ? "active" : ""} onClick={() => switchTab("security")}>Segurança</button>
+      </div>
+      {tab === "preferences" ? <Card className="settings-list" as="div"><div id="preferences-panel" role="tabpanel" aria-labelledby="preferences-tab">
         <div className="setting">
           <div>
             <strong>Privacidade visual</strong>
@@ -880,8 +913,28 @@ export function EnhancedSettings() {
             Salvar
           </Button>
         </div>
-      </Card> : <div className="settings-security-grid"><Card className="settings-security-card"><div className="section-heading"><div><h2><KeyRound size={17} /> Alterar senha</h2><p>Confirme sua senha atual. As demais sessões serão encerradas.</p></div></div><form onSubmit={async (event) => { event.preventDefault(); if (securityLoading) return; setSecurityError(""); setSecurityMessage(""); if (newPassword !== confirmPassword) { setSecurityError("As novas senhas não coincidem."); return; } setSecurityLoading(true); try { await changePassword(currentPassword, newPassword); setCurrentPassword(""); setNewPassword(""); setConfirmPassword(""); setSecurityMessage("Senha alterada e sessão renovada."); setSessions(await listSessions()); } catch (cause) { setSecurityError(cause instanceof ApiError ? cause.message : "Não foi possível alterar sua senha."); } finally { setSecurityLoading(false); } }}><div className="form-field"><label>Senha atual</label><input type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} maxLength={128} required /></div><div className="form-field"><label>Nova senha</label><input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={10} maxLength={128} required /><small>Use de 10 a 128 caracteres.</small></div><div className="form-field"><label>Confirmar nova senha</label><input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={10} maxLength={128} required /></div>{securityError && <p className="form-error">{securityError}</p>}{securityMessage && <p className="form-success">{securityMessage}</p>}<Button type="submit" loading={securityLoading} disabled={securityLoading}>Salvar nova senha</Button></form></Card><Card className="settings-security-card"><div className="section-heading"><div><h2><MonitorSmartphone size={17} /> Sessões</h2><p>Dispositivos com acesso ativo à sua conta.</p></div></div>{sessionError ? <p className="form-error">{sessionError}</p> : <div className="session-list">{sessions.map((session) => <div className="session-row" key={session.id}><div><strong>{session.current ? "Este dispositivo" : "Outro dispositivo"}</strong><small>{session.userAgent ?? "Navegador não identificado"}</small><small>Visto em {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(session.lastSeenAt))}</small></div>{session.current && <Badge tone="green">Atual</Badge>}</div>)}</div>}<div className="security-actions"><Button variant="secondary" disabled={!sessions.some((session) => !session.current)} onClick={async () => { setSecurityLoading(true); try { await revokeOtherSessions(); setSessions(await listSessions()); setSecurityMessage("Outras sessões encerradas."); } finally { setSecurityLoading(false); } }}>Encerrar outras sessões</Button><Button variant="danger" onClick={async () => { await logout(); navigate("/login", { replace: true }); }}><LogOut size={15} />Sair do Cofrin</Button></div></Card></div>}
-    </>
+      </div></Card> : <div id="security-panel" role="tabpanel" aria-labelledby="security-tab" className="settings-security-grid">
+        <Card className="settings-security-card">
+          <div className="section-heading"><div><h2><KeyRound size={18} /> Alterar senha</h2><p>Confirme sua senha atual. As demais sessões serão encerradas.</p></div></div>
+          <form onSubmit={async (event) => { event.preventDefault(); if (securityLoading) return; setSecurityError(""); setSecurityMessage(""); if (newPassword !== confirmPassword) { setSecurityError("As novas senhas não coincidem."); return; } setSecurityLoading(true); try { await changePassword(currentPassword, newPassword); setCurrentPassword(""); setNewPassword(""); setConfirmPassword(""); setSecurityMessage("Senha alterada e sessão renovada."); setSessions(await listSessions()); } catch (cause) { setSecurityError(cause instanceof ApiError ? cause.message : "Não foi possível alterar sua senha."); } finally { setSecurityLoading(false); } }}>
+            <div className="form-field"><label htmlFor="current-password">Senha atual</label><PasswordInput id="current-password" name="current-password" autoComplete="current-password" value={currentPassword} onChange={setCurrentPassword} /></div>
+            <div className="form-field"><label htmlFor="new-password">Nova senha</label><PasswordInput id="new-password" name="new-password" autoComplete="new-password" value={newPassword} onChange={setNewPassword} /><small className="password-helper">Use de 10 a 128 caracteres.</small></div>
+            <div className="form-field"><label htmlFor="confirm-password">Confirmar nova senha</label><PasswordInput id="confirm-password" name="confirm-password" autoComplete="new-password" value={confirmPassword} onChange={setConfirmPassword} /></div>
+            {securityError && <p className="form-error" role="alert">{securityError}</p>}
+            {securityMessage && <p className="form-success" role="status">{securityMessage}</p>}
+            <Button type="submit" loading={securityLoading} disabled={securityLoading}>Salvar nova senha</Button>
+          </form>
+        </Card>
+        <Card className="settings-security-card sessions-card">
+          <div className="section-heading"><div><h2><MonitorSmartphone size={18} /> Sessões</h2><p>Dispositivos com acesso ativo à sua conta.</p></div></div>
+          {sessionError ? <p className="form-error" role="alert">{sessionError}</p> : <div className="session-list">{sessions.length ? sessions.map((session) => <div className="session-row" key={session.id}>
+            <span className="session-device-icon" aria-hidden="true"><MonitorSmartphone size={18} strokeWidth={1.7} /></span>
+            <div className="session-details"><div className="session-title"><strong>{session.current ? "Este dispositivo" : "Outro dispositivo"}</strong>{session.current && <Badge tone="green">Atual</Badge>}</div><small>{describeSessionDevice(session.userAgent)}</small><small>{describeLastSeen(session.lastSeenAt)}</small></div>
+          </div>) : <p className="session-empty">Nenhuma sessão ativa encontrada.</p>}</div>}
+          <div className="security-actions"><Button variant="secondary" disabled={!sessions.some((session) => !session.current)} onClick={async () => { setSecurityLoading(true); try { await revokeOtherSessions(); setSessions(await listSessions()); setSecurityMessage("Outras sessões encerradas."); } finally { setSecurityLoading(false); } }}>Encerrar outras sessões</Button><Button variant="danger" onClick={async () => { await logout(); navigate("/login", { replace: true }); }}><LogOut size={15} />Sair do Cofrin</Button></div>
+        </Card>
+      </div>}
+    </div>
   );
 }
 

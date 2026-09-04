@@ -59,6 +59,27 @@ export function Button({
     </motion.button>
   );
 }
+
+export function PasswordInput({
+  value,
+  onChange,
+  minLength = 10,
+  maxLength = 128,
+  required = true,
+  ...props
+}: Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "value" | "onChange"> & {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [visible, setVisible] = useState(false);
+  return <div className="password-input">
+    <input type={visible ? "text" : "password"} value={value} onChange={(event) => onChange(event.target.value)} minLength={minLength} maxLength={maxLength} required={required} {...props} />
+    <button type="button" onClick={() => setVisible((current) => !current)} aria-label={visible ? "Ocultar senha" : "Mostrar senha"} aria-pressed={visible}>
+      {visible ? <EyeOff size={17} /> : <Eye size={17} />}
+    </button>
+  </div>;
+}
+
 export function Card({
   children,
   className = "",
@@ -97,7 +118,7 @@ export function MoneyValue({
           initial={{ opacity: 0.4, y: 3 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -3 }}
-          transition={{ duration: motionTokens.fast, ease: motionTokens.ease }}
+          transition={{ duration: 0.15, ease: motionTokens.ease }}
         >
           {formatCurrency(amount, hidden)}
         </motion.span>

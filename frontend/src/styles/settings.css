@@ -1,0 +1,80 @@
+/* Settings: content-weighted columns, semantic tabs and readable sessions. */
+.settings-page { width: 100%; max-width: 1180px; margin-inline: auto; }
+.settings-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin: -8px 0 20px;
+  padding: 3px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: var(--surface-1);
+}
+.settings-tabs button {
+  position: relative;
+  min-height: 36px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 8px 13px;
+  background: transparent;
+  color: #85858d;
+  font-size: 11px;
+  font-weight: 700;
+  transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+}
+.settings-tabs button:hover { color: #d4d4d8; }
+.settings-tabs button.active { border-color: var(--border-default); background: var(--surface-3); color: var(--text-primary); box-shadow: var(--glow-green-xs); }
+.settings-tabs button.active::after { content: ""; position: absolute; right: 12px; bottom: -4px; left: 12px; height: 2px; border-radius: 2px; background: var(--green); }
+
+.settings-security-grid {
+  display: grid;
+  grid-template-columns: minmax(360px, .9fr) minmax(440px, 1.1fr);
+  gap: 20px;
+  align-items: start;
+}
+.settings-security-card { min-width: 0; padding: 24px; }
+.settings-security-card .section-heading h2 { display: flex; align-items: center; gap: 8px; }
+.settings-security-card form { display: grid; gap: 12px; }
+.settings-security-card .form-field { margin: 0; }
+.settings-security-card .password-input input { width: 100%; min-height: 42px; border: 1px solid var(--border-default); border-radius: 9px; background: var(--surface-input); color: var(--text-primary); }
+.password-helper { color: #6f6f77 !important; font-size: 9px !important; font-weight: 500; transition: color var(--motion-fast); }
+.form-field:focus-within .password-helper { color: #a1a1aa !important; }
+.sessions-card { display: flex; flex-direction: column; }
+.session-list { display: grid; margin: 4px 0 18px; }
+.session-row { min-width: 0; display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; align-items: start; padding: 15px 0; border-bottom: 1px solid var(--border-subtle); }
+.session-row:last-child { border-bottom: 0; }
+.session-device-icon { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--border-default); border-radius: 9px; background: var(--surface-1); color: #a1a1aa; }
+.session-details { min-width: 0; }
+.session-title { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.session-title strong { overflow: hidden; color: var(--text-primary); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.session-title .badge { flex: none; }
+.session-details > small { display: block; overflow: hidden; margin-top: 4px; color: #85858d; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.session-empty { margin: 16px 0 24px; color: #85858d; font-size: 11px; }
+.security-actions { margin-top: auto; padding-top: 4px; }
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--text-primary);
+  caret-color: var(--text-primary);
+  -webkit-box-shadow: 0 0 0 1000px var(--surface-input) inset;
+  box-shadow: 0 0 0 1000px var(--surface-input) inset;
+  transition: background-color 9999s ease-out 0s;
+}
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary);
+  caret-color: var(--text-primary);
+  -webkit-box-shadow: 0 0 0 1000px var(--surface-input) inset, 0 0 0 3px rgba(74, 222, 128, .12), var(--glow-green-xs);
+  box-shadow: 0 0 0 1000px var(--surface-input) inset, 0 0 0 3px rgba(74, 222, 128, .12), var(--glow-green-xs);
+}
+
+@media (max-width: 1100px) {
+  .settings-security-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  .settings-tabs { display: flex; }
+  .settings-tabs button { flex: 1; }
+  .settings-security-card { padding: 18px; }
+  .security-actions { align-items: stretch; flex-direction: column; }
+  .security-actions .button { justify-content: center; }
+}

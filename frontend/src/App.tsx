@@ -1,8 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import { AnimatePresence } from "framer-motion";
-import { Eye, EyeOff } from "lucide-react";
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { Button, Card, PageHeader, Skeleton, Toast } from "./components/ui";
+import { Button, Card, PageHeader, PasswordInput, Skeleton, Toast } from "./components/ui";
 import { Header, MobileNavigation, Sidebar } from "./components/layout";
 import { AppDataProvider, useAppData } from "./providers/AppDataProvider";
 import { useAuth } from "./providers/AuthProvider";
@@ -22,11 +21,6 @@ const EnhancedReports = lazy(() => import("./pages/FinancialPages").then((module
 const EnhancedSettings = lazy(() => import("./pages/FinancialPages").then((module) => ({ default: module.EnhancedSettings })));
 const SocialPage = lazy(() => import("./pages/SocialPages").then((module) => ({ default: module.SocialPage })));
 const ProfilePage = lazy(() => import("./pages/SocialPages").then((module) => ({ default: module.ProfilePage })));
-
-function PasswordInput({ id, value, onChange, autoComplete }: { id: string; value: string; onChange: (value: string) => void; autoComplete: string }) {
-  const [visible, setVisible] = useState(false);
-  return <div className="password-input"><input id={id} name={id} type={visible ? "text" : "password"} value={value} onChange={(event) => onChange(event.target.value)} autoComplete={autoComplete} minLength={10} maxLength={128} required /><button type="button" onClick={() => setVisible((current) => !current)} aria-label={visible ? "Ocultar senha" : "Mostrar senha"}>{visible ? <EyeOff size={17} /> : <Eye size={17} />}</button></div>;
-}
 
 function AuthPage() {
   const navigate = useNavigate();
@@ -88,8 +82,8 @@ function AuthPage() {
           <div className="form-field"><label htmlFor="username">@username</label><input id="username" name="username" value={username} onChange={(event) => { setUsername(event.target.value.replace(/^@+/, "")); setFieldErrors((current) => ({ ...current, username: undefined })); }} autoComplete="username" maxLength={30} required /><small className={`field-state ${usernameState}`}>{stateLabel}</small>{fieldErrors.username && <small className="form-error">{fieldErrors.username}</small>}</div>
         </>}
         <div className="form-field"><label htmlFor="email">E-mail</label><input id="email" name="email" type="email" value={email} onChange={(event) => { setEmail(event.target.value); setFieldErrors((current) => ({ ...current, email: undefined })); }} autoComplete="email" maxLength={254} required />{fieldErrors.email && <small className="form-error">{fieldErrors.email}</small>}</div>
-        <div className="form-field"><label htmlFor="password">Senha</label><PasswordInput id="password" value={password} onChange={(value) => { setPassword(value); setFieldErrors((current) => ({ ...current, password: undefined })); }} autoComplete={register ? "new-password" : "current-password"} />{register && <small>Use de 10 a 128 caracteres. Frases-senha são aceitas.</small>}{fieldErrors.password && <small className="form-error">{fieldErrors.password}</small>}</div>
-        {register && <div className="form-field"><label htmlFor="confirmPassword">Confirmar senha</label><PasswordInput id="confirmPassword" value={confirm} onChange={(value) => { setConfirm(value); setFieldErrors((current) => ({ ...current, confirm: undefined })); }} autoComplete="new-password" />{fieldErrors.confirm && <small className="form-error">{fieldErrors.confirm}</small>}</div>}
+        <div className="form-field"><label htmlFor="password">Senha</label><PasswordInput id="password" name="password" value={password} onChange={(value) => { setPassword(value); setFieldErrors((current) => ({ ...current, password: undefined })); }} autoComplete={register ? "new-password" : "current-password"} minLength={10} maxLength={128} required />{register && <small>Use de 10 a 128 caracteres. Frases-senha são aceitas.</small>}{fieldErrors.password && <small className="form-error">{fieldErrors.password}</small>}</div>
+        {register && <div className="form-field"><label htmlFor="confirmPassword">Confirmar senha</label><PasswordInput id="confirmPassword" name="confirmPassword" value={confirm} onChange={(value) => { setConfirm(value); setFieldErrors((current) => ({ ...current, confirm: undefined })); }} autoComplete="new-password" minLength={10} maxLength={128} required />{fieldErrors.confirm && <small className="form-error">{fieldErrors.confirm}</small>}</div>}
         {!register && <Link className="forgot-link" to="/forgot-password">Esqueci minha senha</Link>}
         {error && <p className="form-error" role="alert">{error}</p>}
         <Button type="submit" loading={submitting} loadingLabel={register ? "Criando conta…" : "Entrando…"} disabled={submitting || (register && usernameState !== "available")} style={{ width: "100%", justifyContent: "center" }}>{register ? "Criar conta" : "Entrar"}</Button>
