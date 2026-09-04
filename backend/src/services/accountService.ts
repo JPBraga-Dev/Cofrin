@@ -1,5 +1,6 @@
 import { mockDatabase } from "../data/mockDatabase.js";
 import type { Account, Transaction } from "../domain/types.js";
+import { fromCents, toCents } from "../domain/money.js";
 
 const settled = (transaction: Transaction) =>
   transaction.status === "PAID" || transaction.status === "RECEIVED";
@@ -8,22 +9,23 @@ const settled = (transaction: Transaction) =>
 export function accountBalance(accountId: string, transactions = mockDatabase.transactions) {
   const account = mockDatabase.accounts.find((item) => item.id === accountId);
   if (!account) throw new Error("Conta não encontrada.");
-  const balance = transactions.filter(settled).reduce((balance, transaction) => {
-    if (transaction.type === "INCOME" && transaction.accountId === accountId) return balance + transaction.amount;
-    if (transaction.type === "EXPENSE" && transaction.accountId === accountId && transaction.paymentMethod !== "CREDIT") return balance - transaction.amount;
+  const balanceInCents = transactions.filter(settled).reduce((balance, transaction) => {
+    const amount = toCents(transaction.amount);
+    if (transaction.type === "INCOME" && transaction.accountId === accountId) return balance + amount;
+    if (transaction.type === "EXPENSE" && transaction.accountId === accountId && transaction.paymentMethod !== "CREDIT") return balance - amount;
     if (transaction.type === "TRANSFER") {
       const source = transaction.sourceAccountId ?? (transaction.destinationPiggyBankId ? transaction.accountId : undefined);
       const destination = transaction.destinationAccountId;
-      if (source === accountId) balance -= transaction.amount;
-      if (destination === accountId) balance += transaction.amount;
+      if (source === accountId) balance -= amount;
+      if (destination === accountId) balance += amount;
     }
     return balance;
-  }, account.initialBalance);
-  return Math.round(balance * 100) / 100;
+  }, toCents(account.initialBalance) as number);
+  return fromCents(balanceInCents);
 }
 
-export function accountsWithBalances() {
-  return mockDatabase.accounts.map((account) => ({
+export function accountsWithBalances(userId?: string) {
+  return mockDatabase.accounts.filter((account) => !userId || account.userId === userId).map((account) => ({
     id: account.id,
     name: account.name,
     balance: accountBalance(account.id),

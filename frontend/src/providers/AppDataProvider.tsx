@@ -1,117 +1,15 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
-import { api, ApiError } from "../services/api";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { api } from "../services/api";
 import { preferences } from "../services/preferences";
-import type {
-  Budget,
-  BudgetInput,
-  CardInput,
-  CreditCard,
-  DashboardData,
-  Group,
-  GroupExpense,
-  GroupInput,
-  Notification,
-  Conversation,
-  ConversationView,
-  FriendRequest,
-  Message,
-  Profile,
-  PiggyBank,
-  PiggyInput,
-  Transaction,
-  TransactionInput,
-} from "../types";
-
-type Resource =
-  "transactions" | "piggies" | "groups" | "budgets" | "cards" | "notifications" | "social";
-export type GroupExpenseAction = Pick<
-  GroupExpense,
-  | "description"
-  | "amount"
-  | "paidByUserId"
-  | "date"
-  | "category"
-  | "splitType"
-  | "paymentSource"
-> & {
-  participants?: {
-    userId: string;
-    percentage?: number;
-    shares?: number;
-    amount?: number;
-  }[];
-};
-type AppData = {
-  transactions: Transaction[];
-  accounts: { id: string; name: string; balance: number }[];
-  piggies: PiggyBank[];
-  groups: Group[];
-  budgets: Budget[];
-  cards: CreditCard[];
-  notifications: Notification[];
-  profile: Profile | null;
-  friends: Profile[];
-  friendRequests: (FriendRequest & { profile: Profile; direction: "SENT" | "RECEIVED" })[];
-  conversations: ConversationView[];
-  dashboard: DashboardData | null;
-  loading: boolean;
-  error: string | null;
-  toast: string | null;
-  pending: Partial<Record<Resource | "mutation", boolean>>;
-  hidden: boolean;
-  compact: boolean;
-  setHidden: (value: boolean) => void;
-  setCompact: (value: boolean) => void;
-  refresh: () => Promise<void>;
-  createTransaction: (data: TransactionInput) => Promise<Transaction>;
-  updateTransaction: (
-    id: string,
-    data: Partial<TransactionInput>,
-  ) => Promise<Transaction>;
-  deleteTransaction: (id: string) => Promise<void>;
-  createPiggy: (data: PiggyInput) => Promise<PiggyBank>;
-  movePiggy: (
-    id: string,
-    accountId: string,
-    amount: number,
-    type: "DEPOSIT" | "WITHDRAWAL",
-  ) => Promise<PiggyBank>;
-  createGroup: (data: GroupInput) => Promise<Group>;
-  addGroupContribution: (id: string, sourceAccountId: string, amount: number) => Promise<void>;
-  addGroupExpense: (id: string, data: GroupExpenseAction) => Promise<void>;
-  markSettlementPaid: (groupId: string, settlementId: string) => Promise<void>;
-  createBudget: (data: BudgetInput) => Promise<Budget>;
-  updateBudget: (id: string, data: Partial<BudgetInput>) => Promise<Budget>;
-  deleteBudget: (id: string) => Promise<void>;
-  createCard: (data: CardInput) => Promise<CreditCard>;
-  markNotificationRead: (id: string) => Promise<void>;
-  searchPeople: (query: string) => Promise<(Profile & { relationship: "NONE" | "SENT" | "RECEIVED" | "FRIENDS" })[]>;
-  updateProfile: (data: Partial<Pick<Profile, "displayName" | "username" | "bio" | "avatarUrl">>) => Promise<Profile>;
-  checkUsername: (username: string) => Promise<{ username: string; available: boolean; message?: string }>;
-  sendFriendRequest: (userId: string) => Promise<void>;
-  acceptFriendRequest: (id: string) => Promise<void>;
-  declineFriendRequest: (id: string) => Promise<void>;
-  cancelFriendRequest: (id: string) => Promise<void>;
-  removeFriend: (userId: string) => Promise<void>;
-  openDirectConversation: (userId: string) => Promise<Conversation>;
-  getGroupConversation: (groupId: string) => Promise<Conversation>;
-  getMessages: (conversationId: string) => Promise<Message[]>;
-  sendConversationMessage: (conversationId: string, content: string) => Promise<Message>;
-  markConversationRead: (conversationId: string) => Promise<void>;
-};
-const Context = createContext<AppData | null>(null);
+import { useAuth } from "./AuthProvider";
+import type { Budget, ConversationView, CreditCard, Group, Notification, PiggyBank, Profile, Transaction } from "../types";
+import { AppDataContext, type AppData, type Mutation, type Resource, type ResourceStatus } from "./AppDataContext";
+import { useConversationMessages } from "./useConversationMessages";
 const replace = <T extends { id: string }>(items: T[], item: T) =>
   items.map((value) => (value.id === item.id ? item : value));
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
+  const { refreshIdentity } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<{ id: string; name: string; balance: number }[]>([]);
   const [piggies, setPiggies] = useState<PiggyBank[]>([]);
@@ -123,9 +21,18 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const [friends, setFriends] = useState<Profile[]>([]);
   const [friendRequests, setFriendRequests] = useState<AppData["friendRequests"]>([]);
   const [conversations, setConversations] = useState<ConversationView[]>([]);
-  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+  const { messageResources, getMessages, appendMessage } = useConversationMessages();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [resourceStatus, setResourceStatus] = useState<Record<Resource, ResourceStatus>>({
+    transactions: { status: "idle", error: null },
+    piggies: { status: "idle", error: null },
+    groups: { status: "idle", error: null },
+    budgets: { status: "idle", error: null },
+    cards: { status: "idle", error: null },
+    notifications: { status: "idle", error: null },
+    social: { status: "idle", error: null },
+  });
   const [toast, setToast] = useState<string | null>(null);
   const [pending, setPending] = useState<
     Partial<Record<Resource | "mutation", boolean>>
@@ -145,54 +52,34 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     preferences.setBoolean("cofrin-compact", value);
   }, []);
   const refresh = useCallback(async () => {
-    setLoading(true);
     setError(null);
+    const load = async <T,>(resource: Resource, request: () => Promise<T>, assign: (value: T) => void) => {
+      setResourceStatus((current) => ({ ...current, [resource]: { status: "loading", error: null } }));
+      try {
+        assign(await request());
+        setResourceStatus((current) => ({ ...current, [resource]: { status: "ready", error: null } }));
+        return true;
+      } catch (cause) {
+        const message = cause instanceof Error ? cause.message : "Não foi possível carregar este conteúdo.";
+        setResourceStatus((current) => ({ ...current, [resource]: { status: "error", error: message } }));
+        return false;
+      }
+    };
     try {
-      const [
-        nextDashboard,
-        nextTransactions,
-        nextAccounts,
-        nextPiggies,
-        nextGroups,
-        nextBudgets,
-        nextCards,
-        nextNotifications,
-        nextProfile,
-        nextFriends,
-        nextFriendRequests,
-        nextConversations,
-      ] = await Promise.all([
-        api.dashboard(),
-        api.listTransactions(),
-        api.listAccounts(),
-        api.listPiggyBanks(),
-        api.listGroups(),
-        api.listBudgets(),
-        api.listCreditCards(),
-        api.listNotifications(),
-        api.getMyProfile(),
-        api.listFriends(),
-        api.listFriendRequests(),
-        api.listConversations(),
+      const results = await Promise.all([
+        load("transactions", api.listTransactions, setTransactions),
+        load("transactions", api.listAccounts, setAccounts),
+        load("piggies", api.listPiggyBanks, setPiggies),
+        load("groups", api.listGroups, setGroups),
+        load("budgets", api.listBudgets, setBudgets),
+        load("cards", api.listCreditCards, setCards),
+        load("notifications", api.listNotifications, setNotifications),
+        load("social", api.getMyProfile, setProfile),
+        load("social", api.listFriends, setFriends),
+        load("social", api.listFriendRequests, setFriendRequests),
+        load("social", api.listConversations, setConversations),
       ]);
-      setDashboard(nextDashboard);
-      setTransactions(nextTransactions);
-      setAccounts(nextAccounts);
-      setPiggies(nextPiggies);
-      setGroups(nextGroups);
-      setBudgets(nextBudgets);
-      setCards(nextCards);
-      setNotifications(nextNotifications);
-      setProfile(nextProfile);
-      setFriends(nextFriends);
-      setFriendRequests(nextFriendRequests);
-      setConversations(nextConversations);
-    } catch (cause) {
-      setError(
-        cause instanceof ApiError
-          ? cause.message
-          : "Não foi possível carregar os dados do cofrin.",
-      );
+      if (!results.some(Boolean)) setError("Não foi possível carregar os dados do cofrin.");
     } finally {
       setLoading(false);
     }
@@ -205,28 +92,22 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     const timeout = window.setTimeout(() => setToast(null), 2800);
     return () => window.clearTimeout(timeout);
   }, [toast]);
-  const run = useCallback(async <T,>(work: () => Promise<T>) => {
-    setPending((value) => ({ ...value, mutation: true }));
-    setError(null);
+  const run = useCallback(async <T,>(mutation: Mutation, work: () => Promise<T>) => {
+    setPending((value) => ({ ...value, [mutation]: true, mutation: true }));
     try {
       const result = await work();
       setToast("Alteração salva.");
       return result;
     } catch (cause) {
-      const message =
-        cause instanceof ApiError
-          ? cause.message
-          : "Não foi possível salvar sua alteração.";
-      setError(message);
       throw cause;
     } finally {
-      setPending((value) => ({ ...value, mutation: false }));
+      setPending((value) => {
+        const next = { ...value, [mutation]: false };
+        next.mutation = Object.entries(next).some(([key, active]) => key !== "mutation" && active);
+        return next;
+      });
     }
   }, []);
-  const refreshDashboard = useCallback(
-    async () => setDashboard(await api.dashboard()),
-    [],
-  );
   const refreshBudgets = useCallback(async () => {
     setBudgets(await api.listBudgets());
   }, []);
@@ -236,11 +117,12 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     return group;
   }, []);
   const refreshSocial = useCallback(async () => {
-    const [nextProfile, nextFriends, nextRequests, nextConversations] = await Promise.all([api.getMyProfile(), api.listFriends(), api.listFriendRequests(), api.listConversations()]);
+    const [nextProfile, nextFriends, nextRequests, nextConversations, nextGroups] = await Promise.all([api.getMyProfile(), api.listFriends(), api.listFriendRequests(), api.listConversations(), api.listGroups()]);
     setProfile(nextProfile);
     setFriends(nextFriends);
     setFriendRequests(nextRequests);
     setConversations(nextConversations);
+    setGroups(nextGroups);
   }, []);
   const value = useMemo<AppData>(
     () => ({
@@ -255,9 +137,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       friends,
       friendRequests,
       conversations,
-      dashboard,
+      messageResources,
       loading,
       error,
+      resourceStatus,
       toast,
       pending,
       hidden,
@@ -266,64 +149,63 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       setCompact,
       refresh,
       createTransaction: (data) =>
-        run(async () => {
+        run("createTransaction", async () => {
           const item = await api.createTransaction(data);
-          setTransactions((items) => [item, ...items]);
-          const [, nextAccounts] = await Promise.all([refreshDashboard(), api.listAccounts(), refreshBudgets()]);
+          if (item.recurrenceType === "INSTALLMENT") setTransactions(await api.listTransactions());
+          else setTransactions((items) => [item, ...items]);
+          const [, nextAccounts] = await Promise.all([refreshBudgets(), api.listAccounts()]);
           setAccounts(nextAccounts);
           return item;
         }),
       updateTransaction: (id, data) =>
-        run(async () => {
+        run("updateTransaction", async () => {
           const item = await api.updateTransaction(id, data);
           setTransactions((items) => replace(items, item));
-          const [, nextAccounts] = await Promise.all([refreshDashboard(), api.listAccounts(), refreshBudgets()]);
+          const [, nextAccounts] = await Promise.all([refreshBudgets(), api.listAccounts()]);
           setAccounts(nextAccounts);
           return item;
         }),
       deleteTransaction: (id) =>
-        run(async () => {
+        run("deleteTransaction", async () => {
           await api.deleteTransaction(id);
           setTransactions((items) => items.filter((item) => item.id !== id));
-          const [, nextAccounts] = await Promise.all([refreshDashboard(), api.listAccounts(), refreshBudgets()]);
+          const [, nextAccounts] = await Promise.all([refreshBudgets(), api.listAccounts()]);
           setAccounts(nextAccounts);
         }),
       createPiggy: (data) =>
-        run(async () => {
+        run("createPiggy", async () => {
           const item = await api.createPiggyBank(data);
           setPiggies((items) => [item, ...items]);
           return item;
         }),
       movePiggy: (id, accountId, amount, type) =>
-        run(async () => {
+        run("movePiggy", async () => {
           const result =
             type === "DEPOSIT"
               ? await api.depositPiggyBank(id, accountId, amount)
               : await api.withdrawPiggyBank(id, accountId, amount);
           setPiggies((items) => replace(items, result.piggy));
           setTransactions((items) => [result.transaction, ...items]);
-          const [nextDashboard, nextAccounts] = await Promise.all([api.dashboard(), api.listAccounts()]);
-          setDashboard(nextDashboard);
+          const nextAccounts = await api.listAccounts();
           setAccounts(nextAccounts);
           return result.piggy;
         }),
       createGroup: (data) =>
-        run(async () => {
+        run("createGroup", async () => {
           const item = await api.createGroup(data);
           setGroups((items) => [item, ...items]);
           return item;
         }),
       addGroupContribution: (id, sourceAccountId, amount) =>
-        run(async () => {
+        run("addGroupContribution", async () => {
           const result = await api.addContribution(id, { sourceAccountId, amount });
           setGroups((items) => replace(items, result.group));
           setTransactions((items) => [result.transaction, ...items]);
-          const [nextDashboard, nextAccounts] = await Promise.all([api.dashboard(), api.listAccounts()]);
-          setDashboard(nextDashboard);
+          const nextAccounts = await api.listAccounts();
           setAccounts(nextAccounts);
         }),
       addGroupExpense: (id, data) =>
-        run(async () => {
+        run("addGroupExpense", async () => {
           const group = groups.find((item) => item.id === id);
           const payer =
             group?.members.find(
@@ -338,69 +220,97 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
               userId: member.userId,
               shares: data.splitType === "SHARES" ? 1 : undefined,
             }));
-          await api.addExpense(id, {
+          const result = await api.addExpense(id, {
             ...data,
             paidByUserId: payer.userId,
             participants,
           });
-          await refreshGroup(id);
+          setGroups((items) => replace(items, result.group));
+          if (result.transaction)
+            setTransactions((items) => [result.transaction!, ...items]);
+          if (result.transaction?.financialScope === "PERSONAL") {
+            const [, nextAccounts] = await Promise.all([refreshBudgets(), api.listAccounts()]);
+            setAccounts(nextAccounts);
+          }
         }),
       markSettlementPaid: (groupId, settlementId) =>
-        run(async () => {
+        run("markSettlementPaid", async () => {
           await api.markSettlementPaid(groupId, settlementId);
           await refreshGroup(groupId);
         }),
       createBudget: (data) =>
-        run(async () => {
+        run("createBudget", async () => {
           const item = await api.createBudget(data);
           await refreshBudgets();
           return item;
         }),
       updateBudget: (id, data) =>
-        run(async () => {
+        run("updateBudget", async () => {
           const item = await api.updateBudget(id, data);
           setBudgets((items) => replace(items, item));
           return item;
         }),
       deleteBudget: (id) =>
-        run(async () => {
+        run("deleteBudget", async () => {
           await api.deleteBudget(id);
           setBudgets((items) => items.filter((item) => item.id !== id));
         }),
       createCard: (data) =>
-        run(async () => {
+        run("createCard", async () => {
           const item = await api.createCreditCard(data);
           setCards((items) => [item, ...items]);
           return item;
         }),
+      payInvoice: (cardId, referenceMonth, accountId, amount) =>
+        run("payInvoice", async () => {
+          const result = await api.payInvoice(cardId, referenceMonth, accountId, amount);
+          setTransactions((items) => [result.transaction, ...items]);
+          setAccounts(await api.listAccounts());
+        }),
       markNotificationRead: (id) =>
-        run(async () => {
+        run("markNotificationRead", async () => {
           const item = await api.markNotificationRead(id);
           setNotifications((items) => replace(items, item));
         }),
-      searchPeople: (query) => api.searchUsers(query),
+      searchPeople: (query, signal) => api.searchUsers(query, signal),
       checkUsername: (username) => api.usernameAvailability(username),
-      updateProfile: (data) => run(async () => {
+      updateProfile: (data) => run("updateProfile", async () => {
         const item = await api.updateMyProfile(data);
         setProfile(item);
-        setGroups((items) => items.map((group) => ({
-          ...group,
-          members: group.members.map((member) => member.userId === item.id ? { ...member, name: item.displayName } : member),
-        })));
         await refreshSocial();
+        await refreshIdentity();
         setToast("Perfil atualizado.");
         return item;
       }),
-      sendFriendRequest: (userId) => run(async () => { await api.sendFriendRequest(userId); await refreshSocial(); }),
-      acceptFriendRequest: (id) => run(async () => { await api.acceptFriendRequest(id); await refreshSocial(); }),
-      declineFriendRequest: (id) => run(async () => { await api.declineFriendRequest(id); await refreshSocial(); }),
-      cancelFriendRequest: (id) => run(async () => { await api.cancelFriendRequest(id); await refreshSocial(); }),
-      removeFriend: (userId) => run(async () => { await api.removeFriend(userId); await refreshSocial(); }),
-      openDirectConversation: (userId) => run(async () => { const item = await api.createDirectConversation(userId); await refreshSocial(); return item; }),
+      uploadAvatar: (file, crop) => run("uploadAvatar", async () => { const item = await api.uploadAvatar(file, crop); setProfile(item); await Promise.all([refreshSocial(), refreshIdentity()]); setToast("Foto atualizada."); return item; }),
+      removeAvatar: () => run("removeAvatar", async () => { const item = await api.removeAvatar(); setProfile(item); await Promise.all([refreshSocial(), refreshIdentity()]); setToast("Foto removida."); return item; }),
+      uploadCover: (file, crop) => run("uploadCover", async () => { const item = await api.uploadCover(file, crop); setProfile(item); await Promise.all([refreshSocial(), refreshIdentity()]); setToast("Capa atualizada."); return item; }),
+      removeCover: () => run("removeCover", async () => { const item = await api.removeCover(); setProfile(item); await Promise.all([refreshSocial(), refreshIdentity()]); setToast("Capa removida."); return item; }),
+      saveProfileChanges: (changes) => run("saveProfile", async () => {
+        const item = await api.saveProfileBundle(changes);
+        setProfile(item);
+        await Promise.all([refreshSocial(), refreshIdentity()]);
+        setToast("Perfil atualizado.");
+        return item;
+      }),
+      sendFriendRequest: (userId) => run("sendFriendRequest", async () => { await api.sendFriendRequest(userId); await refreshSocial(); }),
+      acceptFriendRequest: (id) => run("acceptFriendRequest", async () => { await api.acceptFriendRequest(id); await refreshSocial(); }),
+      declineFriendRequest: (id) => run("declineFriendRequest", async () => { await api.declineFriendRequest(id); await refreshSocial(); }),
+      cancelFriendRequest: (id) => run("cancelFriendRequest", async () => { await api.cancelFriendRequest(id); await refreshSocial(); }),
+      removeFriend: (userId) => run("removeFriend", async () => { await api.removeFriend(userId); await refreshSocial(); }),
+      openDirectConversation: (userId) => run("openConversation", async () => { const item = await api.createDirectConversation(userId); await refreshSocial(); return item; }),
       getGroupConversation: (groupId) => api.getGroupConversation(groupId),
-      getMessages: (conversationId) => api.listMessages(conversationId),
-      sendConversationMessage: (conversationId, content) => run(async () => { const item = await api.sendMessage(conversationId, content); await refreshSocial(); return item; }),
-      markConversationRead: (conversationId) => run(async () => { await api.markConversationRead(conversationId); await refreshSocial(); }),
+      getMessages,
+      sendConversationMessage: (conversationId, content) => run("sendMessage", async () => {
+        const item = await api.sendMessage(conversationId, content);
+        appendMessage(conversationId, item);
+        setConversations((current) => current.map((conversation) => conversation.id === conversationId ? { ...conversation, lastMessage: item, updatedAt: item.createdAt } : conversation));
+        return item;
+      }),
+      markConversationRead: (conversationId) => run("markConversationRead", async () => {
+        await api.markConversationRead(conversationId);
+        setConversations((current) => current.map((conversation) => conversation.id === conversationId ? { ...conversation, unreadCount: 0 } : conversation));
+      }),
     }),
     [
       transactions,
@@ -414,9 +324,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       friends,
       friendRequests,
       conversations,
-      dashboard,
+      messageResources,
       loading,
       error,
+      resourceStatus,
       toast,
       pending,
       hidden,
@@ -425,16 +336,16 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       setCompact,
       refresh,
       run,
-      refreshDashboard,
       refreshBudgets,
       refreshGroup,
       refreshSocial,
+      getMessages,
+      appendMessage,
+      refreshIdentity,
     ],
   );
-  return <Context.Provider value={value}>{children}</Context.Provider>;
+  return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
 }
-export function useAppData() {
-  const value = useContext(Context);
-  if (!value) throw new Error("useAppData must be used inside AppDataProvider");
-  return value;
-}
+
+export { useAppData } from "./AppDataContext";
+export type { GroupExpenseAction, MessageResource } from "./AppDataContext";

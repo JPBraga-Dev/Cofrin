@@ -7,6 +7,7 @@ export interface Transaction {
   type: TransactionType;
   nature:
     "PERSONAL" | "CREDIT_CARD" | "GROUP" | "PIGGY_BANK" | "ACCOUNT_TRANSFER";
+  financialScope?: "PERSONAL" | "SHARED";
   description: string;
   amount: number;
   date: string;
@@ -25,6 +26,8 @@ export interface Transaction {
   sourcePiggyBankId?: string;
   destinationPiggyBankId?: string;
   destinationGroupId?: string;
+  destinationCreditCardId?: string;
+  invoiceReference?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -76,6 +79,8 @@ export interface GroupMember {
   groupId: string;
   userId: string;
   name: string;
+  username?: string;
+  avatarUrl?: string;
   role: "OWNER" | "ADMIN" | "MEMBER";
   expectedContribution: number;
   joinedAt: string;
@@ -118,9 +123,28 @@ export interface GroupExpense {
   category: string;
   splitType: "EQUAL" | "PERCENTAGE" | "SHARES" | "MANUAL";
   paymentSource: "GROUP_FUND" | "MEMBER";
+  sourceAccountId?: string;
+  financialTransactionId?: string;
+  fundMovementId?: string;
   notes?: string;
   splits: GroupExpenseSplit[];
   createdAt: string;
+}
+export interface GroupFundMovement {
+  id: string;
+  groupId: string;
+  expenseId: string;
+  type: "EXPENSE";
+  amount: number;
+  date: string;
+  description: string;
+  createdAt: string;
+}
+export interface GroupExpenseResult {
+  group: Group;
+  expense: GroupExpense;
+  transaction?: Transaction;
+  fundMovement?: GroupFundMovement;
 }
 export interface Settlement {
   id: string;
@@ -146,6 +170,7 @@ export interface Group {
   members: GroupMember[];
   contributions: GroupContribution[];
   expenses: GroupExpense[];
+  fundMovements?: GroupFundMovement[];
   settlements: Settlement[];
   createdAt: string;
   updatedAt: string;
@@ -170,8 +195,17 @@ export interface Profile {
   bio?: string;
   email?: string;
   avatarUrl?: string;
+  coverUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+export interface AuthSession {
+  id: string;
   createdAt: string;
-  updatedAt: string;
+  expiresAt: string;
+  lastSeenAt: string;
+  userAgent?: string;
+  current: boolean;
 }
 export type FriendRelationship = "NONE" | "SENT" | "RECEIVED" | "FRIENDS";
 export interface FriendRequest {
@@ -206,6 +240,7 @@ export interface ConversationView extends Conversation {
   title: string;
   subtitle?: string;
   avatarUserId?: string;
+  avatarUrl?: string;
   lastMessage?: Message;
   unreadCount: number;
   memberIds: string[];
@@ -235,9 +270,29 @@ export interface Notification {
   actionUrl?: string;
 }
 export interface InvoiceSummary {
-  currentInvoice: number;
-  nextInvoice: number;
-  futureInvoices: number[];
+  cardId: string;
+  currentReference: string;
+  invoices: InvoiceView[];
+  currentInvoice?: InvoiceView;
+  nextInvoice?: InvoiceView;
+  futureInvoices: InvoiceView[];
+  usedLimit: number;
+  availableLimit: number;
+}
+export interface InvoiceView {
+  referenceMonth: string;
+  closingDate: string;
+  dueDate: string;
+  status: "OPEN" | "CLOSED" | "OVERDUE" | "PAID";
+  total: number;
+  paidAmount: number;
+  remainingAmount: number;
+  items: Transaction[];
+}
+export interface InvoicePaymentResult {
+  transaction: Transaction;
+  payment: { id: string; cardId: string; referenceMonth: string; amount: number; accountId: string; date: string; transactionId: string; createdAt: string };
+  invoice: InvoiceView;
 }
 export interface GroupBalance {
   userId: string;

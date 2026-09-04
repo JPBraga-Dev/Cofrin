@@ -3,6 +3,7 @@ import { mockDatabase } from "../src/data/mockDatabase.js";
 import { accountsWithBalances } from "../src/services/accountService.js";
 import { groupFund } from "../src/services/groupFinanceService.js";
 import { transferAccountToGroupFund } from "../src/services/transferService.js";
+import { SEED_USER_IDS } from "../src/data/seedIds.js";
 
 const group = () => mockDatabase.groups.find((item) => item.id === "g1")!;
 let transactionCount = 0;
@@ -31,7 +32,7 @@ describe("group fund contributions", () => {
     expect(availableBefore).toBe(19186.9);
     expect(fundBefore).toBe(5600);
 
-    const result = transferAccountToGroupFund("g1", "main", 3000, "2026-09-03");
+    const result = transferAccountToGroupFund(SEED_USER_IDS.joao, "g1", "main", 3000, "2026-09-03");
 
     expect(availableBalance()).toBe(16186.9);
     expect(groupFund(group())).toBe(8600);
@@ -50,7 +51,7 @@ describe("group fund contributions", () => {
     const contributionsBefore = group().contributions.length;
     const transactionsBefore = mockDatabase.transactions.length;
 
-    expect(() => transferAccountToGroupFund("g1", "wallet", 3000)).toThrow("Saldo insuficiente");
+    expect(() => transferAccountToGroupFund(SEED_USER_IDS.joao, "g1", "wallet", 3000)).toThrow("Saldo insuficiente");
     expect(availableBalance()).toBe(availableBefore);
     expect(groupFund(group())).toBe(fundBefore);
     expect(group().contributions).toHaveLength(contributionsBefore);
@@ -61,7 +62,7 @@ describe("group fund contributions", () => {
     snapshot();
     const transactionsBefore = mockDatabase.transactions.length;
     const contributionsBefore = group().contributions.length;
-    expect(() => transferAccountToGroupFund("missing-group", "main", 1)).toThrow("Grupo não encontrado");
+    expect(() => transferAccountToGroupFund(SEED_USER_IDS.joao, "missing-group", "main", 1)).toThrow("Grupo não encontrado");
     expect(mockDatabase.transactions).toHaveLength(transactionsBefore);
     expect(group().contributions).toHaveLength(contributionsBefore);
   });

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { mockDatabase } from "../src/data/mockDatabase.js";
 import { accountBalance } from "../src/services/accountService.js";
 import { transferAccountToPiggy, transferPiggyToAccount } from "../src/services/transferService.js";
+import { SEED_USER_IDS } from "../src/data/seedIds.js";
 
 const piggy = () => mockDatabase.piggyBanks.find((item) => item.id === "p1")!;
 let transactionCount = 0;
@@ -25,7 +26,7 @@ describe("internal piggy transfers", () => {
     const piggyBefore = piggy().currentAmount;
     const totalBefore = accountBefore + piggyBefore;
 
-    const result = transferAccountToPiggy("p1", "main", 500);
+    const result = transferAccountToPiggy(SEED_USER_IDS.joao, "p1", "main", 500);
 
     expect(result.transaction.type).toBe("TRANSFER");
     expect(accountBalance("main")).toBe(accountBefore - 500);
@@ -39,7 +40,7 @@ describe("internal piggy transfers", () => {
     const piggyBefore = piggy().currentAmount;
     const transactionBefore = mockDatabase.transactions.length;
 
-    expect(() => transferAccountToPiggy("p1", "main", accountBefore + 0.01)).toThrow("Saldo insuficiente");
+    expect(() => transferAccountToPiggy(SEED_USER_IDS.joao, "p1", "main", accountBefore + 0.01)).toThrow("Saldo insuficiente");
     expect(accountBalance("main")).toBe(accountBefore);
     expect(piggy().currentAmount).toBe(piggyBefore);
     expect(mockDatabase.transactions).toHaveLength(transactionBefore);
@@ -51,7 +52,7 @@ describe("internal piggy transfers", () => {
     const piggyBefore = piggy().currentAmount;
     const totalBefore = accountBefore + piggyBefore;
 
-    transferPiggyToAccount("p1", "wallet", 300);
+    transferPiggyToAccount(SEED_USER_IDS.joao, "p1", "wallet", 300);
 
     expect(accountBalance("wallet")).toBe(accountBefore + 300);
     expect(piggy().currentAmount).toBe(piggyBefore - 300);

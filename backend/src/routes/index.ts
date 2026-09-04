@@ -1,49 +1,70 @@
 import { Router } from "express";
+import multer from "multer";
+import * as auth from "../controllers/authController.js";
+import * as avatar from "../controllers/avatarController.js";
 import * as c from "../controllers/controllers.js";
+import { asyncHandler as h, optionalAuth, rateLimit, requireAuth } from "../middlewares/security.js";
+
 export const api = Router();
+const avatarUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 4, fieldSize: 256 } }).single("avatar");
+const coverUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024, files: 1, fields: 4, fieldSize: 256 } }).single("cover");
+const profileBundleUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024, files: 2, fields: 8, fieldSize: 4096 } }).fields([{ name: "avatar", maxCount: 1 }, { name: "cover", maxCount: 1 }]);
+
 api.get("/health", c.health);
-api.get("/dashboard", c.dashboard);
-api.get("/accounts", c.listAccounts);
-api.route("/transactions").get(c.listTransactions).post(c.createTransaction);
-api
-  .route("/transactions/:id")
-  .get(c.getTransaction)
-  .put(c.updateTransaction)
-  .delete(c.removeTransaction);
-api.route("/piggy-banks").get(c.listPiggies).post(c.createPiggy);
-api.route("/piggy-banks/:id").get(c.getPiggy).put(c.updatePiggy);
-api.post("/piggy-banks/:id/deposits", c.movePiggy);
-api.post("/piggy-banks/:id/withdrawals", c.movePiggy);
-api.route("/groups").get(c.listGroups).post(c.createGroup);
-api.route("/groups/:id").get(c.getGroup).put(c.updateGroup);
-api.get("/groups/:id/summary", c.groupSummary);
-api.route("/groups/:id/members").get(c.groupMembers).post(c.addGroupMember);
-api
-  .route("/groups/:id/contributions")
-  .get(c.groupContributions)
-  .post(c.addGroupContribution);
-api.route("/groups/:id/expenses").get(c.groupExpenses).post(c.addGroupExpense);
-api.get("/groups/:id/balances", c.groupBalances);
-api.get("/groups/:id/settlements", c.groupSettlements);
-api.patch("/groups/:id/settlements/:settlementId/pay", c.markSettlementPaid);
-api.route("/budgets").get(c.listBudgets).post(c.createBudget);
-api.route("/budgets/:id").put(c.updateBudget).delete(c.removeBudget);
-api.route("/credit-cards").get(c.listCards).post(c.createCard);
-api.get("/credit-cards/:id/invoices", c.invoices);
-api.get("/notifications", c.listNotifications);
-api.patch("/notifications/:id/read", c.readNotification);
-api.route("/profiles/me").get(c.getMyProfile).patch(c.patchMyProfile);
-api.get("/profiles/username-availability", c.usernameAvailability);
-api.get("/users", c.listUsers);
-api.get("/users/:username", c.getUser);
-api.get("/friends", c.listFriends);
-api.delete("/friends/:id", c.deleteFriend);
-api.route("/friend-requests").get(c.listFriendRequests).post(c.createFriendRequest);
-api.delete("/friend-requests/:id", c.cancelFriendRequest);
-api.patch("/friend-requests/:id/accept", c.acceptFriendRequest);
-api.patch("/friend-requests/:id/decline", c.declineFriendRequest);
-api.get("/conversations", c.listConversations);
-api.post("/conversations/direct", c.createDirectConversation);
-api.route("/conversations/:id/messages").get(c.messagesForConversation).post(c.createMessage);
-api.patch("/conversations/:id/read", c.markConversationRead);
-api.get("/groups/:id/conversation", c.groupConversation);
+api.post("/auth/register", rateLimit("register", 4, 15 * 60_000), h(auth.registerAccount));
+api.post("/auth/login", rateLimit("login-minute", 5, 60_000), rateLimit("login-window", 20, 15 * 60_000), h(auth.loginAccount));
+api.post("/auth/forgot-password", rateLimit("forgot-password", 4, 15 * 60_000), h(auth.requestPasswordReset));
+api.post("/auth/reset-password", rateLimit("reset-password", 6, 15 * 60_000), h(auth.completePasswordReset));
+api.get("/profiles/username-availability", rateLimit("username-check", 30, 60_000), optionalAuth, h(c.usernameAvailability));
+
+api.use(requireAuth);
+api.get("/auth/me", h(auth.me));
+api.post("/auth/logout", h(auth.logoutAccount));
+api.post("/auth/change-password", rateLimit("change-password", 6, 15 * 60_000), h(auth.changeAccountPassword));
+api.get("/auth/sessions", h(auth.listSessions));
+api.delete("/auth/sessions/others", h(auth.revokeOtherSessions));
+api.get("/dashboard", h(c.dashboard));
+api.get("/accounts", h(c.listAccounts));
+api.get("/accounts/:id", h(c.getAccount));
+api.route("/transactions").get(h(c.listTransactions)).post(h(c.createTransaction));
+api.route("/transactions/:id").get(h(c.getTransaction)).put(h(c.updateTransaction)).delete(h(c.removeTransaction));
+api.route("/piggy-banks").get(h(c.listPiggies)).post(h(c.createPiggy));
+api.route("/piggy-banks/:id").get(h(c.getPiggy)).put(h(c.updatePiggy));
+api.post("/piggy-banks/:id/deposits", h(c.movePiggy));
+api.post("/piggy-banks/:id/withdrawals", h(c.movePiggy));
+api.route("/groups").get(h(c.listGroups)).post(h(c.createGroup));
+api.route("/groups/:id").get(h(c.getGroup)).put(h(c.updateGroup));
+api.get("/groups/:id/summary", h(c.groupSummary));
+api.route("/groups/:id/members").get(h(c.groupMembers)).post(h(c.addGroupMember));
+api.route("/groups/:id/contributions").get(h(c.groupContributions)).post(h(c.addGroupContribution));
+api.route("/groups/:id/expenses").get(h(c.groupExpenses)).post(h(c.addGroupExpense));
+api.get("/groups/:id/balances", h(c.groupBalances));
+api.get("/groups/:id/settlements", h(c.groupSettlements));
+api.patch("/groups/:id/settlements/:settlementId/pay", h(c.markSettlementPaid));
+api.route("/budgets").get(h(c.listBudgets)).post(h(c.createBudget));
+api.route("/budgets/:id").get(h(c.getBudget)).put(h(c.updateBudget)).delete(h(c.removeBudget));
+api.route("/credit-cards").get(h(c.listCards)).post(h(c.createCard));
+api.get("/credit-cards/:id/invoices", h(c.invoices));
+api.post("/credit-cards/:id/invoices/:referenceMonth/pay", h(c.payInvoice));
+api.get("/notifications", h(c.listNotifications));
+api.patch("/notifications/:id/read", h(c.readNotification));
+api.route("/profile/me").get(h(c.getMyProfile)).patch(h(c.patchMyProfile));
+api.route("/profiles/me").get(h(c.getMyProfile)).patch(h(c.patchMyProfile));
+api.patch("/profile/me/bundle", rateLimit("profile-bundle", 8, 15 * 60_000), profileBundleUpload, h(avatar.saveProfileBundle));
+api.post("/profile/avatar", rateLimit("avatar", 6, 15 * 60_000), avatarUpload, h(avatar.uploadAvatar));
+api.delete("/profile/avatar", rateLimit("avatar", 6, 15 * 60_000), h(avatar.removeAvatar));
+api.post("/profile/cover", rateLimit("cover", 6, 15 * 60_000), coverUpload, h(avatar.uploadCover));
+api.delete("/profile/cover", rateLimit("cover", 6, 15 * 60_000), h(avatar.removeCover));
+api.get("/users", h(c.listUsers));
+api.get("/users/:username", h(c.getUser));
+api.get("/friends", h(c.listFriends));
+api.delete("/friends/:id", h(c.deleteFriend));
+api.route("/friend-requests").get(h(c.listFriendRequests)).post(h(c.createFriendRequest));
+api.delete("/friend-requests/:id", h(c.cancelFriendRequest));
+api.patch("/friend-requests/:id/accept", h(c.acceptFriendRequest));
+api.patch("/friend-requests/:id/decline", h(c.declineFriendRequest));
+api.get("/conversations", h(c.listConversations));
+api.post("/conversations/direct", h(c.createDirectConversation));
+api.route("/conversations/:id/messages").get(h(c.messagesForConversation)).post(h(c.createMessage));
+api.patch("/conversations/:id/read", h(c.markConversationRead));
+api.get("/groups/:id/conversation", h(c.groupConversation));

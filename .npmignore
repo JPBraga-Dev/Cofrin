@@ -1,0 +1,16 @@
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.git/
+**/*.tsbuildinfo
+backend/storage/
+coverage/
+.env
+.env.local
+.env.*.local
+*.log
+*.zip
+*.tgz
+playwright-report/
+test-results/

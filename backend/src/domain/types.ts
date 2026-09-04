@@ -6,6 +6,8 @@ export interface Transaction {
   type: TransactionType;
   nature:
     "PERSONAL" | "CREDIT_CARD" | "GROUP" | "PIGGY_BANK" | "ACCOUNT_TRANSFER";
+  /** Separates the user's private ledger from a shared group-fund audit entry. */
+  financialScope?: "PERSONAL" | "SHARED";
   description: string;
   amount: number;
   date: string;
@@ -25,6 +27,8 @@ export interface Transaction {
   sourcePiggyBankId?: string;
   destinationPiggyBankId?: string;
   destinationGroupId?: string;
+  destinationCreditCardId?: string;
+  invoiceReference?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -69,7 +73,6 @@ export interface GroupMember {
   id: string;
   groupId: string;
   userId: string;
-  name: string;
   role: "OWNER" | "ADMIN" | "MEMBER";
   expectedContribution: number;
   joinedAt: string;
@@ -107,8 +110,21 @@ export interface GroupExpense {
   category: string;
   splitType: "EQUAL" | "PERCENTAGE" | "SHARES" | "MANUAL";
   paymentSource: "GROUP_FUND" | "MEMBER";
+  sourceAccountId?: string;
+  financialTransactionId?: string;
+  fundMovementId?: string;
   notes?: string;
   splits: GroupExpenseSplit[];
+  createdAt: string;
+}
+export interface GroupFundMovement {
+  id: string;
+  groupId: string;
+  expenseId: string;
+  type: "EXPENSE";
+  amount: number;
+  date: string;
+  description: string;
   createdAt: string;
 }
 export interface Settlement {
@@ -135,6 +151,7 @@ export interface Group {
   members: GroupMember[];
   contributions: GroupContribution[];
   expenses: GroupExpense[];
+  fundMovements?: GroupFundMovement[];
   settlements: Settlement[];
   createdAt: string;
   updatedAt: string;
@@ -150,16 +167,96 @@ export interface Budget {
   createdAt: string;
   updatedAt: string;
 }
+export interface CreditCard {
+  id: string;
+  userId: string;
+  name: string;
+  brand: string;
+  lastFourDigits: string;
+  limit: number;
+  closingDay: number;
+  dueDay: number;
+  color: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface CreditCardInvoicePayment {
+  id: string;
+  userId: string;
+  cardId: string;
+  referenceMonth: string;
+  amount: number;
+  accountId: string;
+  date: string;
+  transactionId: string;
+  createdAt: string;
+}
 
 export interface Profile {
-  id: string;
+  userId: string;
   displayName: string;
   username: string;
   bio?: string;
-  email: string;
-  avatarUrl?: string;
+  avatarPath?: string;
+  avatarVersion: number;
+  coverPath?: string;
+  coverVersion: number;
   createdAt: string;
   updatedAt: string;
+}
+export interface User {
+  id: string;
+  emailNormalized: string;
+  passwordHash: string;
+  status: "ACTIVE" | "DISABLED";
+  emailVerifiedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  lastLoginAt?: string;
+  passwordChangedAt?: string;
+}
+export interface Session {
+  id: string;
+  userId: string;
+  tokenHash: string;
+  createdAt: string;
+  expiresAt: string;
+  lastSeenAt: string;
+  revokedAt?: string;
+  createdIpMetadata?: string;
+  userAgentMetadata?: string;
+}
+export interface PasswordResetToken {
+  id: string;
+  userId: string;
+  tokenHash: string;
+  expiresAt: string;
+  usedAt?: string;
+  createdAt: string;
+}
+export type AuditEventType =
+  | "REGISTER_SUCCESS"
+  | "LOGIN_SUCCESS"
+  | "LOGIN_FAILED"
+  | "LOGOUT"
+  | "PASSWORD_CHANGED"
+  | "PASSWORD_RESET_REQUESTED"
+  | "PASSWORD_RESET_COMPLETED"
+  | "PROFILE_UPDATED"
+  | "USERNAME_CHANGED"
+  | "AVATAR_UPDATED"
+  | "AVATAR_REMOVED"
+  | "COVER_UPDATED"
+  | "COVER_REMOVED"
+  | "SESSION_REVOKED"
+  | "AUTHORIZATION_DENIED";
+export interface AuditLog {
+  id: string;
+  eventType: AuditEventType;
+  userId?: string;
+  timestamp: string;
+  metadata?: Record<string, unknown>;
 }
 export type FriendRequestStatus = "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED";
 export interface FriendRequest {

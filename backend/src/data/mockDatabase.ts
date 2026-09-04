@@ -1,5 +1,7 @@
-import type { Account, Budget, Conversation, ConversationMember, FriendRequest, Friendship, Group, Message, PiggyBank, Profile, Transaction } from "../domain/types.js";
+import type { Account, AuditLog, Budget, Conversation, ConversationMember, CreditCard, CreditCardInvoicePayment, FriendRequest, Friendship, Group, Message, PasswordResetToken, PiggyBank, Profile, Session, Transaction, User } from "../domain/types.js";
+import { SEED_USER_IDS } from "./seedIds.js";
 const now = "2026-08-31T12:00:00.000Z";
+const { joao: JOAO_USER_ID, maria: MARIA_USER_ID, lucas: LUCAS_USER_ID, ana: ANA_USER_ID } = SEED_USER_IDS;
 const transactionHistory: Transaction[] = [
   [
     "t6",
@@ -75,7 +77,7 @@ const transactionHistory: Transaction[] = [
   ["t21", "Transferência para viagem", 550, "TRANSFER", "2026-08-25", "goals", "TRANSFER"],
 ].map(([id, description, amount, type, date, categoryId, paymentMethod]) => ({
   id: id as string,
-  userId: "u-joao",
+  userId: JOAO_USER_ID,
   type: type as Transaction["type"],
   nature: (type === "TRANSFER" ? "PIGGY_BANK" : "PERSONAL") as Transaction["nature"],
   description: description as string,
@@ -95,20 +97,8 @@ export const mockDatabase: {
   piggyBanks: PiggyBank[];
   groups: Group[];
   budgets: Budget[];
-  creditCards: {
-    id: string;
-    userId: string;
-    name: string;
-    brand: string;
-    lastFourDigits: string;
-    limit: number;
-    closingDay: number;
-    dueDay: number;
-    color: string;
-    isActive: boolean;
-    createdAt: string;
-    updatedAt: string;
-  }[];
+  creditCards: CreditCard[];
+  invoicePayments: CreditCardInvoicePayment[];
   notifications: {
     id: string;
     userId: string;
@@ -125,11 +115,15 @@ export const mockDatabase: {
   conversations: Conversation[];
   conversationMembers: ConversationMember[];
   messages: Message[];
+  users: User[];
+  sessions: Session[];
+  passwordResetTokens: PasswordResetToken[];
+  auditLogs: AuditLog[];
 } = {
   transactions: [
     {
       id: "t1",
-      userId: "u-joao",
+      userId: JOAO_USER_ID,
       type: "INCOME",
       nature: "PERSONAL",
       description: "Salário mensal",
@@ -145,7 +139,7 @@ export const mockDatabase: {
     },
     {
       id: "t2",
-      userId: "u-joao",
+      userId: JOAO_USER_ID,
       type: "INCOME",
       nature: "PERSONAL",
       description: "Freelance",
@@ -161,7 +155,7 @@ export const mockDatabase: {
     },
     {
       id: "t3",
-      userId: "u-joao",
+      userId: JOAO_USER_ID,
       type: "EXPENSE",
       nature: "PERSONAL",
       description: "Aluguel",
@@ -177,7 +171,7 @@ export const mockDatabase: {
     },
     {
       id: "t4",
-      userId: "u-joao",
+      userId: JOAO_USER_ID,
       type: "EXPENSE",
       nature: "CREDIT_CARD",
       description: "Notebook Pro",
@@ -195,7 +189,7 @@ export const mockDatabase: {
     },
     {
       id: "t5",
-      userId: "u-joao",
+      userId: JOAO_USER_ID,
       type: "EXPENSE",
       nature: "PERSONAL",
       description: "Internet",
@@ -212,13 +206,13 @@ export const mockDatabase: {
     ...transactionHistory,
   ],
   accounts: [
-    { id: "main", userId: "u-joao", name: "Conta principal", type: "CHECKING", initialBalance: 12000, createdAt: now, updatedAt: now },
-    { id: "wallet", userId: "u-joao", name: "Carteira", type: "CASH", initialBalance: 420, createdAt: now, updatedAt: now },
+    { id: "main", userId: JOAO_USER_ID, name: "Conta principal", type: "CHECKING", initialBalance: 12000, createdAt: now, updatedAt: now },
+    { id: "wallet", userId: JOAO_USER_ID, name: "Carteira", type: "CASH", initialBalance: 420, createdAt: now, updatedAt: now },
   ],
   piggyBanks: [
     {
       id: "p1",
-      userId: "u-joao",
+      userId: JOAO_USER_ID,
       name: "Viagem de fim de ano",
       description: "Chapada dos Veadeiros",
       targetAmount: 6000,
@@ -234,7 +228,7 @@ export const mockDatabase: {
         {
           id: "pm1",
           piggyBankId: "p1",
-          userId: "u-joao",
+          userId: JOAO_USER_ID,
           type: "DEPOSIT",
           amount: 550,
           date: "2026-08-25",
@@ -249,7 +243,7 @@ export const mockDatabase: {
   groups: [
     {
       id: "g1",
-      ownerId: "u-joao",
+      ownerId: JOAO_USER_ID,
       name: "Viagem para Jericoacoara",
       description: "Viagem da turma",
       type: "TRIP",
@@ -263,8 +257,7 @@ export const mockDatabase: {
         {
           id: "gm1",
           groupId: "g1",
-          userId: "u-joao",
-          name: "João",
+          userId: JOAO_USER_ID,
           role: "OWNER",
           expectedContribution: 2500,
           joinedAt: now,
@@ -274,8 +267,7 @@ export const mockDatabase: {
         {
           id: "gm2",
           groupId: "g1",
-          userId: "u-maria",
-          name: "Maria",
+          userId: MARIA_USER_ID,
           role: "MEMBER",
           expectedContribution: 2500,
           joinedAt: now,
@@ -285,8 +277,7 @@ export const mockDatabase: {
         {
           id: "gm3",
           groupId: "g1",
-          userId: "u-lucas",
-          name: "Lucas",
+          userId: LUCAS_USER_ID,
           role: "MEMBER",
           expectedContribution: 2500,
           joinedAt: now,
@@ -301,7 +292,7 @@ export const mockDatabase: {
           groupId: "g1",
           description: "Hospedagem em Jeri",
           amount: 1200,
-          paidByUserId: "u-joao",
+          paidByUserId: JOAO_USER_ID,
           date: "2026-08-24",
           category: "Hospedagem",
           splitType: "EQUAL",
@@ -310,21 +301,21 @@ export const mockDatabase: {
             {
               id: "ges1",
               expenseId: "ge1",
-              userId: "u-joao",
+              userId: JOAO_USER_ID,
               amount: 400,
               status: "PENDING",
             },
             {
               id: "ges2",
               expenseId: "ge1",
-              userId: "u-maria",
+              userId: MARIA_USER_ID,
               amount: 400,
               status: "PENDING",
             },
             {
               id: "ges3",
               expenseId: "ge1",
-              userId: "u-lucas",
+              userId: LUCAS_USER_ID,
               amount: 400,
               status: "PENDING",
             },
@@ -338,7 +329,7 @@ export const mockDatabase: {
   budgets: [
     {
       id: "b1",
-      userId: "u-joao",
+      userId: JOAO_USER_ID,
       categoryId: "food",
       limitAmount: 1100,
       currentAmount: 932,
@@ -349,7 +340,7 @@ export const mockDatabase: {
     },
     {
       id: "b2",
-      userId: "u-joao",
+      userId: JOAO_USER_ID,
       categoryId: "leisure",
       limitAmount: 400,
       currentAmount: 445,
@@ -362,23 +353,24 @@ export const mockDatabase: {
   creditCards: [
     {
       id: "card-main",
-      userId: "u-joao",
+      userId: JOAO_USER_ID,
       name: "Cartão principal",
       brand: "Mastercard",
       lastFourDigits: "4582",
       limit: 5000,
       closingDay: 4,
       dueDay: 11,
-      color: "#a78bfa",
+      color: "carbon",
       isActive: true,
       createdAt: now,
       updatedAt: now,
     },
   ],
+  invoicePayments: [],
   notifications: [
     {
       id: "n1",
-      userId: "u-joao",
+      userId: JOAO_USER_ID,
       type: "BILL_DUE",
       title: "Fatura próxima",
       message: "A fatura vence em 11 dias.",
@@ -388,7 +380,7 @@ export const mockDatabase: {
     },
     {
       id: "n2",
-      userId: "u-joao",
+      userId: JOAO_USER_ID,
       type: "BUDGET_WARNING",
       title: "Orçamento em alerta",
       message: "Alimentação chegou a 85% do orçamento.",
@@ -398,7 +390,7 @@ export const mockDatabase: {
     },
     {
       id: "n3",
-      userId: "u-joao",
+      userId: JOAO_USER_ID,
       type: "GOAL_PROGRESS",
       title: "Meta avançando",
       message: "Sua viagem já chegou à metade.",
@@ -408,31 +400,37 @@ export const mockDatabase: {
     },
   ],
   profiles: [
-    { id: "u-joao", displayName: "João Braga", username: "joaobraga", bio: "Organizando a vida financeira e a próxima viagem.", email: "joao@cofrin.app", createdAt: now, updatedAt: now },
-    { id: "u-maria", displayName: "Maria Silva", username: "maria", bio: "Planejando bons momentos com as pessoas certas.", email: "maria@cofrin.app", createdAt: now, updatedAt: now },
-    { id: "u-lucas", displayName: "Lucas Costa", username: "lucas", bio: "Sempre pronto para a próxima aventura.", email: "lucas@cofrin.app", createdAt: now, updatedAt: now },
-    { id: "u-ana", displayName: "Ana Ribeiro", username: "ana.r", bio: "Metas pequenas também contam.", email: "ana@cofrin.app", createdAt: now, updatedAt: now },
+    { userId: JOAO_USER_ID, displayName: "João Braga", username: "joaobraga", bio: "Organizando a vida financeira e a próxima viagem.", avatarVersion: 0, coverVersion: 0, createdAt: now, updatedAt: now },
+    { userId: MARIA_USER_ID, displayName: "Maria Silva", username: "maria", bio: "Planejando bons momentos com as pessoas certas.", avatarVersion: 0, coverVersion: 0, createdAt: now, updatedAt: now },
+    { userId: LUCAS_USER_ID, displayName: "Lucas Costa", username: "lucas", bio: "Sempre pronto para a próxima aventura.", avatarVersion: 0, coverVersion: 0, createdAt: now, updatedAt: now },
+    { userId: ANA_USER_ID, displayName: "Ana Ribeiro", username: "ana.r", bio: "Metas pequenas também contam.", avatarVersion: 0, coverVersion: 0, createdAt: now, updatedAt: now },
   ],
   friendRequests: [
-    { id: "fr-maria-joao", senderId: "u-maria", receiverId: "u-joao", status: "PENDING", createdAt: now, updatedAt: now },
+    { id: "fr-maria-joao", senderId: MARIA_USER_ID, receiverId: JOAO_USER_ID, status: "PENDING", createdAt: now, updatedAt: now },
   ],
   friendships: [
-    { id: "friend-joao-lucas", userA: "u-joao", userB: "u-lucas", createdAt: now },
+    { id: "friend-joao-lucas", userA: JOAO_USER_ID, userB: LUCAS_USER_ID, createdAt: now },
   ],
   conversations: [
     { id: "c-direct-lucas", type: "DIRECT", createdAt: now, updatedAt: now },
     { id: "c-group-g1", type: "GROUP", groupId: "g1", createdAt: now, updatedAt: now },
   ],
   conversationMembers: [
-    { conversationId: "c-direct-lucas", userId: "u-joao", joinedAt: now, lastReadAt: now },
-    { conversationId: "c-direct-lucas", userId: "u-lucas", joinedAt: now },
-    { conversationId: "c-group-g1", userId: "u-joao", joinedAt: now, lastReadAt: now },
-    { conversationId: "c-group-g1", userId: "u-maria", joinedAt: now },
-    { conversationId: "c-group-g1", userId: "u-lucas", joinedAt: now },
+    { conversationId: "c-direct-lucas", userId: JOAO_USER_ID, joinedAt: now, lastReadAt: now },
+    { conversationId: "c-direct-lucas", userId: LUCAS_USER_ID, joinedAt: now },
+    { conversationId: "c-group-g1", userId: JOAO_USER_ID, joinedAt: now, lastReadAt: now },
+    { conversationId: "c-group-g1", userId: MARIA_USER_ID, joinedAt: now },
+    { conversationId: "c-group-g1", userId: LUCAS_USER_ID, joinedAt: now },
   ],
   messages: [
-    { id: "m-lucas-1", conversationId: "c-direct-lucas", senderId: "u-lucas", content: "Fechamos os detalhes da viagem hoje?", createdAt: "2026-08-30T18:20:00.000Z" },
-    { id: "m-jeri-1", conversationId: "c-group-g1", senderId: "u-maria", content: "Já olhei o hotel. Está dentro do orçamento.", createdAt: "2026-08-30T15:10:00.000Z" },
-    { id: "m-jeri-2", conversationId: "c-group-g1", senderId: "u-lucas", content: "Consigo fazer a contribuição amanhã.", createdAt: "2026-08-30T15:18:00.000Z" },
+    { id: "m-lucas-1", conversationId: "c-direct-lucas", senderId: LUCAS_USER_ID, content: "Fechamos os detalhes da viagem hoje?", createdAt: "2026-08-30T18:20:00.000Z" },
+    { id: "m-jeri-1", conversationId: "c-group-g1", senderId: MARIA_USER_ID, content: "Já olhei o hotel. Está dentro do orçamento.", createdAt: "2026-08-30T15:10:00.000Z" },
+    { id: "m-jeri-2", conversationId: "c-group-g1", senderId: LUCAS_USER_ID, content: "Consigo fazer a contribuição amanhã.", createdAt: "2026-08-30T15:18:00.000Z" },
   ],
+  users: [
+    { id: JOAO_USER_ID, emailNormalized: "joao@cofrin.app", passwordHash: "$argon2id$v=19$m=65536,p=1,t=3$nuaUT6VRPr3B/NJ8EnJr3g$UQdPgA2m4muVn7zh6dVCs3VuaNjh3e+ewS8GvnTPIKk", status: "ACTIVE", createdAt: now, updatedAt: now, passwordChangedAt: now },
+  ],
+  sessions: [],
+  passwordResetTokens: [],
+  auditLogs: [],
 };

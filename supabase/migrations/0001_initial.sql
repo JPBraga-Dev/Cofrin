@@ -1,2 +1,2 @@
--- The canonical initial schema is kept in ../schema.sql for local review.
--- Copy its statements into this migration when wiring the project to a live Supabase instance.
+-- HISTORICAL ONLY. Do not apply to a new installation.
+-- The canonical fresh-database contract is ../schema.sql and uses Cofrin-owned auth.

@@ -1,12 +1,27 @@
 import {
+  createContext,
   useEffect,
+  useContext,
+  useId,
+  useRef,
+  useState,
   type ButtonHTMLAttributes,
   type InputHTMLAttributes,
   type ReactNode,
 } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Eye, EyeOff, X } from "lucide-react";
+import { Check, CircleDashed, Eye, EyeOff, X, type LucideIcon } from "lucide-react";
+import { motionTokens } from "./motion";
 import { formatCurrency } from "../utils/format";
+
+const avatarInitials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "?";
+export function UserAvatar({ src, name, className = "", alt }: { src?: string; name: string; className?: string; alt?: string }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+  return src && !failed
+    ? <img className={className} src={src} alt={alt ?? `Foto de ${name}`} onError={() => setFailed(true)} />
+    : <span className={className} aria-label={alt ?? `Iniciais de ${name}`}>{avatarInitials(name)}</span>;
+}
 
 type ButtonProps = Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
@@ -19,39 +34,48 @@ type ButtonProps = Omit<
 > & {
   variant?: "primary" | "secondary" | "pink" | "ghost" | "danger";
   loading?: boolean;
+  loadingLabel?: string;
 };
 export function Button({
   children,
   variant = "primary",
   className = "",
   loading = false,
+  loadingLabel = "Salvando…",
   disabled,
   ...props
 }: ButtonProps) {
   return (
     <motion.button
+      whileHover={disabled || loading ? undefined : { y: -1 }}
       whileTap={disabled || loading ? undefined : { scale: 0.98 }}
+      transition={{ duration: motionTokens.instant, ease: motionTokens.ease }}
       className={`button ${variant} ${className}`}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       {...props}
     >
-      {loading ? "Salvando…" : children}
+      {loading ? loadingLabel : children}
     </motion.button>
   );
 }
 export function Card({
   children,
   className = "",
+  as = "section",
+  motionLayout = false,
 }: {
   children: ReactNode;
   className?: string;
+  as?: "section" | "article" | "div";
+  motionLayout?: boolean | "position" | "size";
 }) {
-  return (
-    <motion.section layout className={`card ${className}`}>
-      {children}
-    </motion.section>
-  );
+  if (!motionLayout) {
+    const Element = as;
+    return <Element className={`card ${className}`}>{children}</Element>;
+  }
+  const MotionElement = as === "article" ? motion.article : as === "div" ? motion.div : motion.section;
+  return <MotionElement layout={motionLayout} className={`card ${className}`}>{children}</MotionElement>;
 }
 export function MoneyValue({
   amount,
@@ -67,7 +91,17 @@ export function MoneyValue({
   return (
     <span className={`money ${type ?? ""} ${size}`}>
       {type === "expense" && !hidden ? "−" : ""}
-      {formatCurrency(amount, hidden)}
+      <AnimatePresence initial={false} mode="wait">
+        <motion.span
+          key={`${amount}-${hidden}`}
+          initial={{ opacity: 0.4, y: 3 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -3 }}
+          transition={{ duration: motionTokens.fast, ease: motionTokens.ease }}
+        >
+          {formatCurrency(amount, hidden)}
+        </motion.span>
+      </AnimatePresence>
     </span>
   );
 }
@@ -81,10 +115,10 @@ export function Progress({
   return (
     <div className="progress" aria-label={`${Math.round(value)}% concluído`}>
       <motion.i
-        initial={{ width: 0 }}
-        animate={{ width: `${Math.max(0, Math.min(100, value))}%` }}
-        transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
-        style={{ background: color }}
+        initial={false}
+        animate={{ scaleX: Math.max(0, Math.min(100, value)) / 100 }}
+        transition={{ duration: 0.36, ease: motionTokens.ease }}
+        style={{ background: color, transformOrigin: "left center" }}
       />
     </div>
   );
@@ -120,16 +154,21 @@ export function PageHeader({
     </div>
   );
 }
-function useEscape(active: boolean, onClose: () => void) {
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(() => typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(query).matches);
   useEffect(() => {
-    if (!active) return;
-    const listener = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", listener);
-    return () => window.removeEventListener("keydown", listener);
-  }, [active, onClose]);
+    if (typeof window.matchMedia !== "function") return undefined;
+    const media = window.matchMedia(query);
+    const update = () => setMatches(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, [query]);
+  return matches;
 }
+
+const DrawerLabelContext = createContext<{ titleId: string; descriptionId: string } | null>(null);
+const focusable = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 export function Drawer({
   open,
   onClose,
@@ -139,8 +178,44 @@ export function Drawer({
   onClose: () => void;
   children: ReactNode;
 }) {
-  useEscape(open, onClose);
-  const mobile = typeof window !== "undefined" && window.innerWidth <= 760;
+  const mobile = useMediaQuery("(max-width: 760px)");
+  const panelRef = useRef<HTMLElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  const titleId = useId();
+  const descriptionId = useId();
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+  useEffect(() => {
+    if (!open) return;
+    openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusTimer = window.setTimeout(() => {
+      const candidates = [...(panelRef.current?.querySelectorAll<HTMLElement>(focusable) ?? [])];
+      (candidates.find((element) => !element.classList.contains("close")) ?? candidates[0] ?? panelRef.current)?.focus();
+    }, 0);
+    const keyboard = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+      if (event.key !== "Tab" || !panelRef.current) return;
+      const candidates = [...panelRef.current.querySelectorAll<HTMLElement>(focusable)].filter((element) => element.offsetParent !== null);
+      if (!candidates.length) { event.preventDefault(); panelRef.current.focus(); return; }
+      const first = candidates[0];
+      const last = candidates[candidates.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", keyboard);
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener("keydown", keyboard);
+      document.body.style.overflow = previousOverflow;
+      window.setTimeout(() => openerRef.current?.focus(), 0);
+    };
+  }, [open]);
   return (
     <AnimatePresence>
       {open && (
@@ -152,23 +227,29 @@ export function Drawer({
           onMouseDown={onClose}
         >
           <motion.aside
+            ref={panelRef}
             className="drawer"
             role="dialog"
             aria-modal="true"
+            aria-labelledby={titleId}
+            aria-describedby={descriptionId}
+            tabIndex={-1}
             initial={mobile ? { y: 16, opacity: 0.95 } : { x: 20, opacity: 0.95 }}
             animate={mobile ? { y: 0, opacity: 1 } : { x: 0, opacity: 1 }}
             exit={mobile ? { y: 16, opacity: 0.95 } : { x: 20, opacity: 0.95 }}
-            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: motionTokens.normal, ease: motionTokens.ease }}
             onMouseDown={(event) => event.stopPropagation()}
           >
-            <button
-              className="icon-button close"
-              onClick={onClose}
-              aria-label="Fechar painel"
-            >
-              <X size={20} />
-            </button>
-            {children}
+            <DrawerLabelContext.Provider value={{ titleId, descriptionId }}>
+              <button
+                className="icon-button close"
+                onClick={onClose}
+                aria-label="Fechar painel"
+              >
+                <X size={20} />
+              </button>
+              {children}
+            </DrawerLabelContext.Provider>
           </motion.aside>
         </motion.div>
       )}
@@ -195,13 +276,15 @@ export function PrivacyButton({
 export function EmptyState({
   title,
   detail,
+  icon: Icon = CircleDashed,
 }: {
   title: string;
   detail: string;
+  icon?: LucideIcon;
 }) {
   return (
     <div className="empty">
-      <div>◌</div>
+      <div aria-hidden="true"><Icon size={22} strokeWidth={1.6} /></div>
       <strong>{title}</strong>
       <p>{detail}</p>
     </div>
@@ -221,9 +304,10 @@ export function Toast({ message }: { message: string }) {
     <motion.p
       className="toast"
       role="status"
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 10 }}
+      exit={{ opacity: 0, y: -2 }}
+      transition={{ duration: motionTokens.normal, ease: motionTokens.ease }}
     >
       {message}
     </motion.p>
@@ -238,11 +322,12 @@ export function DrawerHeader({
   title: string;
   description: string;
 }) {
+  const labels = useContext(DrawerLabelContext);
   return (
     <header className="drawer-header">
       {eyebrow && <span className="drawer-eyebrow">{eyebrow}</span>}
-      <h2>{title}</h2>
-      <p>{description}</p>
+      <h2 id={labels?.titleId}>{title}</h2>
+      <p id={labels?.descriptionId}>{description}</p>
     </header>
   );
 }
@@ -323,20 +408,41 @@ export function SegmentedControl<T extends string>({
 export function CurrencyInput({
   value,
   onChange,
+  onCentsChange,
+  onFocus,
+  onBlur,
   ...props
 }: Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange"> & {
   value: string;
   onChange: (value: string) => void;
+  onCentsChange?: (cents: number) => void;
 }) {
+  const [focused, setFocused] = useState(false);
+  const numeric = Number(value.replace(",", "."));
+  const displayValue = !value
+    ? ""
+    : focused
+      ? value.replace(".", ",")
+      : Number.isFinite(numeric)
+        ? new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numeric)
+        : value;
   return (
     <div className="currency-input">
       <span>R$</span>
       <input
         inputMode="decimal"
-        value={value}
-        onChange={(event) =>
-          onChange(event.target.value.replace(/[^\d,.-]/g, ""))
-        }
+        value={displayValue}
+        onFocus={(event) => { setFocused(true); onFocus?.(event); }}
+        onBlur={(event) => { setFocused(false); onBlur?.(event); }}
+        onChange={(event) => {
+          const cleaned = event.target.value.replace(/\s|R\$/gi, "").replace(/\.(?=\d{3}(?:\D|$))/g, "").replace(",", ".").replace(/[^\d.]/g, "");
+          const [whole = "", ...decimalParts] = cleaned.split(".");
+          const decimal = decimalParts.join("").slice(0, 2);
+          const normalized = decimalParts.length ? `${whole || "0"}.${decimal}` : whole;
+          onChange(normalized);
+          const amount = Number(normalized || 0);
+          if (Number.isFinite(amount)) onCentsChange?.(Math.round((amount + Number.EPSILON) * 100));
+        }}
         {...props}
       />
     </div>
