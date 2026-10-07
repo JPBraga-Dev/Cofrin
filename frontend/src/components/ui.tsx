@@ -128,18 +128,19 @@ export function MoneyValue({
 }
 export function Progress({
   value,
-  color = "#22c55e",
+  color = "#3b82f6",
 }: {
   value: number;
   color?: string;
 }) {
+  const resolvedColor = color === "#4ade80" ? "#3b82f6" : color;
   return (
     <div className="progress" aria-label={`${Math.round(value)}% concluído`}>
       <motion.i
         initial={false}
         animate={{ scaleX: Math.max(0, Math.min(100, value)) / 100 }}
         transition={{ duration: 0.36, ease: motionTokens.ease }}
-        style={{ background: color, transformOrigin: "left center" }}
+        style={{ background: resolvedColor, transformOrigin: "left center" }}
       />
     </div>
   );

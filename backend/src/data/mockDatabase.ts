@@ -1,7 +1,18 @@
 import type { Account, AuditLog, Budget, Conversation, ConversationMember, CreditCard, CreditCardInvoicePayment, FriendRequest, Friendship, Group, Message, PasswordResetToken, PiggyBank, Profile, Session, Transaction, User } from "../domain/types.js";
 import { SEED_USER_IDS } from "./seedIds.js";
 const now = "2026-08-31T12:00:00.000Z";
-const { joao: JOAO_USER_ID, maria: MARIA_USER_ID, lucas: LUCAS_USER_ID, ana: ANA_USER_ID } = SEED_USER_IDS;
+const {
+  joao: JOAO_USER_ID,
+  maria: MARIA_USER_ID,
+  lucas: LUCAS_USER_ID,
+  ana: ANA_USER_ID,
+  beatriz: BEATRIZ_USER_ID,
+  caio: CAIO_USER_ID,
+  isabela: ISABELA_USER_ID,
+  rafael: RAFAEL_USER_ID,
+  sofia: SOFIA_USER_ID,
+  thiago: THIAGO_USER_ID,
+} = SEED_USER_IDS;
 const transactionHistory: Transaction[] = [
   [
     "t6",
@@ -404,6 +415,12 @@ export const mockDatabase: {
     { userId: MARIA_USER_ID, displayName: "Maria Silva", username: "maria", bio: "Planejando bons momentos com as pessoas certas.", avatarVersion: 0, coverVersion: 0, createdAt: now, updatedAt: now },
     { userId: LUCAS_USER_ID, displayName: "Lucas Costa", username: "lucas", bio: "Sempre pronto para a próxima aventura.", avatarVersion: 0, coverVersion: 0, createdAt: now, updatedAt: now },
     { userId: ANA_USER_ID, displayName: "Ana Ribeiro", username: "ana.r", bio: "Metas pequenas também contam.", avatarVersion: 0, coverVersion: 0, createdAt: now, updatedAt: now },
+    { userId: BEATRIZ_USER_ID, displayName: "Beatriz Martins", username: "bia.martins", bio: "Construindo uma reserva com constância.", avatarVersion: 0, coverVersion: 0, createdAt: now, updatedAt: now },
+    { userId: CAIO_USER_ID, displayName: "Caio Azevedo", username: "caio.azevedo", bio: "Organização para aproveitar melhor cada plano.", avatarVersion: 0, coverVersion: 0, createdAt: now, updatedAt: now },
+    { userId: ISABELA_USER_ID, displayName: "Isabela Moraes", username: "isabela.moraes", bio: "Equilíbrio entre o presente e os próximos passos.", avatarVersion: 0, coverVersion: 0, createdAt: now, updatedAt: now },
+    { userId: RAFAEL_USER_ID, displayName: "Rafael Lima", username: "rafa.lima", bio: "Planejamento simples para projetos grandes.", avatarVersion: 0, coverVersion: 0, createdAt: now, updatedAt: now },
+    { userId: SOFIA_USER_ID, displayName: "Sofia Almeida", username: "sofia.almeida", bio: "Juntando para experiências que importam.", avatarVersion: 0, coverVersion: 0, createdAt: now, updatedAt: now },
+    { userId: THIAGO_USER_ID, displayName: "Thiago Souza", username: "thiago.souza", bio: "Controle financeiro sem perder a leveza.", avatarVersion: 0, coverVersion: 0, createdAt: now, updatedAt: now },
   ],
   friendRequests: [
     { id: "fr-maria-joao", senderId: MARIA_USER_ID, receiverId: JOAO_USER_ID, status: "PENDING", createdAt: now, updatedAt: now },
@@ -429,6 +446,15 @@ export const mockDatabase: {
   ],
   users: [
     { id: JOAO_USER_ID, emailNormalized: "joao@cofrin.app", passwordHash: "$argon2id$v=19$m=65536,p=1,t=3$nuaUT6VRPr3B/NJ8EnJr3g$UQdPgA2m4muVn7zh6dVCs3VuaNjh3e+ewS8GvnTPIKk", status: "ACTIVE", createdAt: now, updatedAt: now, passwordChangedAt: now },
+    { id: MARIA_USER_ID, emailNormalized: "maria@cofrin.app", passwordHash: "seeded-social-profile", status: "ACTIVE", createdAt: now, updatedAt: now, passwordChangedAt: now },
+    { id: LUCAS_USER_ID, emailNormalized: "lucas@cofrin.app", passwordHash: "seeded-social-profile", status: "ACTIVE", createdAt: now, updatedAt: now, passwordChangedAt: now },
+    { id: ANA_USER_ID, emailNormalized: "ana@cofrin.app", passwordHash: "seeded-social-profile", status: "ACTIVE", createdAt: now, updatedAt: now, passwordChangedAt: now },
+    { id: BEATRIZ_USER_ID, emailNormalized: "beatriz@cofrin.app", passwordHash: "seeded-social-profile", status: "ACTIVE", createdAt: now, updatedAt: now, passwordChangedAt: now },
+    { id: CAIO_USER_ID, emailNormalized: "caio@cofrin.app", passwordHash: "seeded-social-profile", status: "ACTIVE", createdAt: now, updatedAt: now, passwordChangedAt: now },
+    { id: ISABELA_USER_ID, emailNormalized: "isabela@cofrin.app", passwordHash: "seeded-social-profile", status: "ACTIVE", createdAt: now, updatedAt: now, passwordChangedAt: now },
+    { id: RAFAEL_USER_ID, emailNormalized: "rafael@cofrin.app", passwordHash: "seeded-social-profile", status: "ACTIVE", createdAt: now, updatedAt: now, passwordChangedAt: now },
+    { id: SOFIA_USER_ID, emailNormalized: "sofia@cofrin.app", passwordHash: "seeded-social-profile", status: "ACTIVE", createdAt: now, updatedAt: now, passwordChangedAt: now },
+    { id: THIAGO_USER_ID, emailNormalized: "thiago@cofrin.app", passwordHash: "seeded-social-profile", status: "ACTIVE", createdAt: now, updatedAt: now, passwordChangedAt: now },
   ],
   sessions: [],
   passwordResetTokens: [],

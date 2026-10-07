@@ -766,7 +766,7 @@ export function EnhancedPiggyBanks() {
             </div>
             <Progress
               value={percent(item.currentAmount, item.targetAmount)}
-              color={item.status === "COMPLETED" ? "#f5c451" : "#4ade80"}
+              color={item.status === "COMPLETED" ? "#f5c451" : "#3b82f6"}
             />
             <div className="piggy-meta">
               <span>
@@ -874,7 +874,7 @@ export function EnhancedPiggyBanks() {
                 : "Defina uma meta"}
             </span>
           </div>
-          <Progress value={0} color="#4ade80" />
+          <Progress value={0} color="#3b82f6" />
           <p>
             {Number(draft.monthlyContribution) > 0 &&
             Number(draft.targetAmount) > 0
@@ -1005,7 +1005,7 @@ export function EnhancedGroups() {
               {group.targetAmount && (
                 <Progress
                   value={percent(fund, group.targetAmount)}
-                  color="#4ade80"
+                  color="#3b82f6"
                 />
               )}
               <div className="group-footer">
@@ -1338,7 +1338,7 @@ export function EnhancedGroupDetail() {
                 </div>
                 <Progress
                   value={percent(fund, group.targetAmount)}
-                  color="#4ade80"
+                  color="#3b82f6"
                 />
               </>
             )}
@@ -1383,7 +1383,7 @@ export function EnhancedGroupDetail() {
                           .reduce((total, item) => total + item.amount, 0),
                         member.expectedContribution,
                       )}
-                      color="#4ade80"
+                      color="#3b82f6"
                     />
                   ) : (
                     <small>Sem valor esperado</small>

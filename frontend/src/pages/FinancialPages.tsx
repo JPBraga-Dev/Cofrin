@@ -410,7 +410,7 @@ export function EnhancedBudgets() {
                     ? "#ef4444"
                     : tone === "gold"
                       ? "#f5c451"
-                      : "#4ade80"
+                      : "#3b82f6"
                 }
               />
               <small>
@@ -553,7 +553,7 @@ export function EnhancedBudgetDetail() {
   return <div className="budget-detail">
     <button className="back-link" onClick={() => navigate("/budgets")}>← Orçamentos</button>
     <div className="detail-hero"><div><p className="eyebrow">Planejamento mensal</p><h1>{categoryName(budget.categoryId)}</h1><p>{monthName}. Controle seus gastos nesta categoria.</p></div><div className="detail-actions"><Badge tone={isExceeded ? "red" : usage >= 80 ? "gold" : "green"}>{status}</Badge><Button variant="secondary" onClick={() => setEditing(true)}>Editar orçamento</Button></div></div>
-    <Card className="budget-hero"><div><span>Limite mensal</span><MoneyValue amount={budget.limitAmount} hidden={hidden} size="large" /></div><div><span>Gasto</span><MoneyValue amount={spent} hidden={hidden} /></div><div><span>{isExceeded ? "Ultrapassado em" : "Disponível"}</span><MoneyValue amount={Math.abs(available)} type={isExceeded ? "expense" : "income"} hidden={hidden} /></div><div><span>Utilizado</span><strong>{usage}%</strong></div><Progress value={usage} color={isExceeded ? "#ef4444" : usage >= 80 ? "#f5c451" : "#4ade80"} /></Card>
+    <Card className="budget-hero"><div><span>Limite mensal</span><MoneyValue amount={budget.limitAmount} hidden={hidden} size="large" /></div><div><span>Gasto</span><MoneyValue amount={spent} hidden={hidden} /></div><div><span>{isExceeded ? "Ultrapassado em" : "Disponível"}</span><MoneyValue amount={Math.abs(available)} type={isExceeded ? "expense" : "income"} hidden={hidden} /></div><div><span>Utilizado</span><strong>{usage}%</strong></div><Progress value={usage} color={isExceeded ? "#ef4444" : usage >= 80 ? "#f5c451" : "#3b82f6"} /></Card>
     <div className="budget-detail-grid"><Card><div className="section-heading"><div><h2>Gastos deste orçamento</h2><p>Despesas de {categoryName(budget.categoryId)} que formam este total.</p></div><Button onClick={() => navigate(`/transactions?new=1&category=${budget.categoryId}&date=${budget.referenceMonth ?? `${today().slice(0, 7)}-01`}`)}><Plus size={15} />Adicionar gasto</Button></div>{expenses.length ? expenses.map((item) => <button className="budget-expense-row" key={item.id} onClick={() => navigate(`/transactions?q=${encodeURIComponent(item.description)}`)}><div><strong>{item.description}</strong><small>{formatDate(item.date)} · {item.paymentMethod}</small></div><MoneyValue amount={item.amount} type="expense" hidden={hidden} size="small" /></button>) : <EmptyState title="Nenhum gasto neste orçamento ainda" detail={`As despesas de ${categoryName(budget.categoryId)} registradas em ${monthName} aparecerão automaticamente aqui.`} />}</Card><Card className="budget-insights"><h2>Resumo do período</h2><div><span>Quantidade de gastos</span><strong>{expenses.length}</strong></div><div><span>Maior gasto</span><MoneyValue amount={largest} hidden={hidden} size="small" /></div><div><span>Média por gasto</span><MoneyValue amount={expenses.length ? spent / expenses.length : 0} hidden={hidden} size="small" /></div><p>O uso é calculado automaticamente pelos lançamentos. Não é necessário informar gastos manualmente.</p></Card></div>
     <Drawer open={editing} onClose={() => setEditing(false)}><DrawerHeader eyebrow="Planejamento mensal" title="Editar orçamento" description="Alterar a categoria, o limite ou o mês recalcula o resumo automaticamente." /><form onSubmit={async (event) => { event.preventDefault(); if (Number(limit) <= 0) return; await updateBudget(budget.id, { categoryId: category, limitAmount: Number(limit), referenceMonth }); setEditing(false); }}><FormSection title="Configuração"><div className="form-field"><label>Categoria</label><select value={category} onChange={(event) => setCategory(event.target.value)}>{["food", "housing", "transport", "health", "subscriptions", "leisure", "education"].map((value) => <option key={value} value={value}>{categoryName(value)}</option>)}</select></div><div className="form-field"><label>Limite mensal</label><CurrencyInput value={limit} onChange={setLimit} /></div><div className="form-field"><label>Mês de referência</label><input type="month" value={referenceMonth} onChange={(event) => setReferenceMonth(event.target.value)} /></div></FormSection><DrawerFooter onCancel={() => setEditing(false)} submitLabel="Salvar alterações" loading={pending.mutation} /></form><Button className="budget-delete" variant="danger" loading={pending.mutation} onClick={async () => { await deleteBudget(budget.id); navigate("/budgets"); }}>Excluir orçamento</Button></Drawer>
   </div>;
@@ -756,14 +756,14 @@ export function EnhancedReports() {
               <Area
                 type="monotone"
                 dataKey="income"
-                stroke="#4ade80"
-                fill="#4ade8022"
+                stroke="#3b82f6"
+                fill="#3b82f622"
               />
               <Area
                 type="monotone"
                 dataKey="expense"
-                stroke="#f47272"
-                fill="#f4727222"
+                stroke="#ef4444"
+                fill="#ef444422"
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -787,7 +787,7 @@ export function EnhancedReports() {
                   {categories.map((item, index) => (
                     <Cell
                       fill={
-                        ["#4ade80", "#f5c451", "#e87878", "#71717a", "#4a4a50"][
+                        ["#3b82f6", "#60a5fa", "#ef4444", "#f5c451", "#71717a"][
                           index % 5
                         ]
                       }

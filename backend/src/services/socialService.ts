@@ -7,6 +7,10 @@ import { AppError } from "../utils/appError.js";
 
 const timestamp = () => new Date().toISOString();
 const keyFor = (a: string, b: string) => [a, b].sort().join(":");
+const searchable = (value: string) => value
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .toLocaleLowerCase("pt-BR");
 const notify = (userId: string, type: "FRIEND_REQUEST" | "FRIEND_ACCEPTED" | "DIRECT_MESSAGE" | "GROUP_MESSAGE", title: string, message: string, actionUrl: string) => mockDatabase.notifications.unshift({ id: crypto.randomUUID(), userId, type, title, message, actionUrl, read: false, createdAt: timestamp() });
 
 export { normalizeUsername };
@@ -38,8 +42,18 @@ export async function updateOwnProfile(userId: string, data: { displayName?: str
 export function searchProfiles(userId: string, search = "") {
   const query = normalizeUsername(search);
   if (query.length < 2) return [];
-  const normal = search.trim().toLocaleLowerCase("pt-BR");
-  return mockDatabase.profiles.filter((profile) => profile.userId !== userId && (search.startsWith("@") ? profile.username.includes(query) : `${profile.displayName} ${profile.username}`.toLocaleLowerCase("pt-BR").includes(normal))).map((profile) => ({ ...publicProfile(profile), relationship: relationship(userId, profile.userId) }));
+  const normal = searchable(search.trim().replace(/^@/, ""));
+  return mockDatabase.profiles
+    .filter((profile) => profile.userId !== userId)
+    .filter((profile) => search.startsWith("@")
+      ? normalizeUsername(profile.username).includes(query)
+      : searchable(`${profile.displayName} ${profile.username}`).includes(normal))
+    .sort((left, right) => {
+      const leftExact = searchable(`${left.displayName} ${left.username}`).startsWith(normal);
+      const rightExact = searchable(`${right.displayName} ${right.username}`).startsWith(normal);
+      return Number(rightExact) - Number(leftExact) || left.displayName.localeCompare(right.displayName, "pt-BR");
+    })
+    .map((profile) => ({ ...publicProfile(profile), relationship: relationship(userId, profile.userId) }));
 }
 export function listFriends(userId: string) {
   return mockDatabase.friendships.filter((item) => item.userA === userId || item.userB === userId).map((item) => profileById(item.userA === userId ? item.userB : item.userA)!).filter(Boolean).map(publicProfile);

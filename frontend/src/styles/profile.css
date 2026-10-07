@@ -51,10 +51,10 @@
 .crop-controls { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0,1fr); gap: 9px; padding-top: 10px; border-top: 1px solid #29292d; }
 .crop-controls label { display: grid; gap: 6px; color: #8d8d94; font-size: 9px; }
 .crop-controls label span { display: flex; align-items: center; gap: 4px; color: #9d9da5; font-size: 9px; font-weight: 600; }
-.crop-controls input { width: 100%; accent-color: #4ade80; }
+.crop-controls input { width: 100%; accent-color: #3b82f6; }
 .username-field { display: flex; align-items: center; overflow: hidden; border: 1px solid #34343a; border-radius: 9px; background: #0d0d0f; transition: border-color 130ms ease; }
-.username-field:focus-within { border-color: #4ade80; outline: 2px solid #294d36; outline-offset: 2px; }
-.username-field.valid { border-color: #356b4a; }
+.username-field:focus-within { border-color: #3b82f6; outline: 2px solid #1e3a8a; outline-offset: 2px; }
+.username-field.valid { border-color: #2563eb; }
 .username-field.invalid { border-color: #7e353d; }
 .username-field > span { flex: none; padding-left: 12px; color: #85858d; font-size: 12px; }
 .username-field input { min-width: 0; width: 100%; border: 0 !important; outline: 0 !important; box-shadow: none !important; background: transparent !important; }
