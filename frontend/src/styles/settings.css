@@ -24,7 +24,7 @@
 }
 .settings-tabs button:hover { color: #d4d4d8; }
 .settings-tabs button.active { border-color: var(--border-default); background: var(--surface-3); color: var(--text-primary); box-shadow: var(--glow-green-xs); }
-.settings-tabs button.active::after { content: ""; position: absolute; right: 12px; bottom: -4px; left: 12px; height: 2px; border-radius: 2px; background: var(--green); }
+.settings-tabs button.active::after { content: ""; position: absolute; right: 12px; bottom: -4px; left: 12px; height: 2px; border-radius: 2px; background: var(--blue); }
 
 .settings-security-grid {
   display: grid;

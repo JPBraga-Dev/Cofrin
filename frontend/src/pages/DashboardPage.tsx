@@ -9,7 +9,7 @@ import { useAppData } from "../providers/AppDataProvider";
 import { formatCurrency, formatDate, formatShortDate, percent } from "../utils/format";
 import { accountName, budgetSpent, categoryName, expenseObligations, groupFundValue, groupLabel, personalLedgerTransactions, piggyTotal, spendingByCategory } from "../utils/selectors";
 
-const categoryColors = ["#3b82f6", "#60a5fa", "#ef4444", "#f5c451"];
+const categoryColors = ["#3b82f6", "#d4a72c", "#dc2626", "#71717a"];
 const formatMonth = (value: string) => new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(new Date(`${value}-01T12:00:00`));
 
 function DashboardSection({ children, index, className = "" }: { children: ReactNode; index: number; className?: string }) {
@@ -84,8 +84,8 @@ export function DashboardPage() {
                 <XAxis dataKey="day" tickLine={false} axisLine={false} tick={{ fill: "#8d8d94", fontSize: 11 }} />
                 <YAxis tickLine={false} axisLine={false} tick={{ fill: "#8d8d94", fontSize: 10 }} width={40} />
                 <Tooltip cursor={{ fill: "#202023" }} contentStyle={{ background: "#171719", border: "1px solid #39393e", borderRadius: 10 }} formatter={(value: number) => formatCurrency(value, hidden)} />
-                <Bar dataKey="income" name="Receitas" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="expense" name="Despesas" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="income" name="Receitas" fill="#16a34a" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="expense" name="Despesas" fill="#dc2626" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : <EmptyState title="Sem movimentações neste período" detail="O fluxo aparece quando houver lançamentos." />}

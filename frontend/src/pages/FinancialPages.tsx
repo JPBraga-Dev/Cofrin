@@ -407,10 +407,10 @@ export function EnhancedBudgets() {
                 value={percent(spent, item.limitAmount)}
                 color={
                   tone === "red"
-                    ? "#ef4444"
+                    ? "#dc2626"
                     : tone === "gold"
                       ? "#f5c451"
-                      : "#3b82f6"
+                      : "#16a34a"
                 }
               />
               <small>
@@ -756,14 +756,14 @@ export function EnhancedReports() {
               <Area
                 type="monotone"
                 dataKey="income"
-                stroke="#3b82f6"
-                fill="#3b82f622"
+                stroke="#16a34a"
+                fill="#16a34a22"
               />
               <Area
                 type="monotone"
                 dataKey="expense"
-                stroke="#ef4444"
-                fill="#ef444422"
+                stroke="#dc2626"
+                fill="#dc262622"
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -787,7 +787,7 @@ export function EnhancedReports() {
                   {categories.map((item, index) => (
                     <Cell
                       fill={
-                        ["#3b82f6", "#60a5fa", "#ef4444", "#f5c451", "#71717a"][
+                        ["#3b82f6", "#d4a72c", "#dc2626", "#16a34a", "#71717a"][
                           index % 5
                         ]
                       }

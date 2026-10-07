@@ -51,7 +51,7 @@
 }
 .summary-label { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #b8b8bd; font-size: 12px; font-weight: 700; }
 .balance-kicker { justify-content: flex-start; font-size: 13px; }
-.balance-kicker svg { color: var(--green); }
+.balance-kicker svg { color: #a1a1aa; }
 .dashboard-balance > .money { display: block; margin-top: 27px; }
 .dashboard-balance > .money.large { font-size: clamp(2rem, 3vw, 2.7rem); }
 .balance-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: auto; padding-top: 26px; color: #929299; font-size: 10px; }
