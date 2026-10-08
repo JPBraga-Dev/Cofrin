@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { mockDatabase } from "../src/data/mockDatabase.js";
-import type { Transaction } from "../src/domain/types.js";
+import type { Transaction } from "../src/core/types.js";
 import { accountBalance, accountsWithBalances } from "../src/services/accountService.js";
 import { SEED_USER_IDS } from "../src/data/seedIds.js";
 

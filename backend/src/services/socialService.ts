@@ -1,9 +1,9 @@
 import { mockDatabase } from "../data/mockDatabase.js";
-import type { Conversation, FriendRequest, Profile } from "../domain/types.js";
+import type { Conversation, FriendRequest, Profile } from "../core/types.js";
 import { audit } from "./auditService.js";
 import { avatarUrlFor, coverUrlFor } from "./authService.js";
 import { normalizeUsername, requireAvailableUsername, validateUsernameSyntax } from "./identityService.js";
-import { AppError } from "../utils/appError.js";
+import { AppError } from "../core/appError.js";
 
 const timestamp = () => new Date().toISOString();
 const keyFor = (a: string, b: string) => [a, b].sort().join(":");

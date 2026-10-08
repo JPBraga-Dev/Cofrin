@@ -3,7 +3,7 @@ import { sessionRepository } from "../repositories/security.js";
 import { changePassword, forgotPassword, login, logout, register, resetPassword, safeIdentity } from "../services/authService.js";
 import { audit, pseudonymize } from "../services/auditService.js";
 import { cookieOptions, SESSION_COOKIE } from "../services/sessionService.js";
-import { forgotPasswordSchema, loginSchema, passwordChangeSchema, registerSchema, resetPasswordSchema } from "../validators/authSchemas.js";
+import { forgotPasswordSchema, loginSchema, passwordChangeSchema, registerSchema, resetPasswordSchema } from "../core/authSchemas.js";
 
 const metadata = (req: Request) => ({ ip: pseudonymize(req.ip || req.socket.remoteAddress || "unknown"), userAgent: req.get("user-agent") });
 const setSessionCookie = (res: Response, token: string) => res.cookie(SESSION_COOKIE, token, cookieOptions());

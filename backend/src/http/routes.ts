@@ -1,9 +1,9 @@
 import { Router } from "express";
 import multer from "multer";
-import * as auth from "../controllers/authController.js";
-import * as avatar from "../controllers/avatarController.js";
-import * as c from "../controllers/controllers.js";
-import { asyncHandler as h, optionalAuth, rateLimit, requireAuth } from "../middlewares/security.js";
+import * as auth from "./authController.js";
+import * as avatar from "./avatarController.js";
+import * as c from "./controllers.js";
+import { asyncHandler as h, optionalAuth, rateLimit, requireAuth } from "./security.js";
 
 export const api = Router();
 const avatarUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 4, fieldSize: 256 } }).single("avatar");

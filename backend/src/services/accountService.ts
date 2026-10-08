@@ -1,6 +1,6 @@
 import { mockDatabase } from "../data/mockDatabase.js";
-import type { Account, Transaction } from "../domain/types.js";
-import { fromCents, toCents } from "../domain/money.js";
+import type { Account, Transaction } from "../core/types.js";
+import { fromCents, toCents } from "../core/money.js";
 
 const settled = (transaction: Transaction) =>
   transaction.status === "PAID" || transaction.status === "RECEIVED";

@@ -1,5 +1,9 @@
 @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
-@import "./styles/profile.css";
+/* Page-specific rules stay at the source root so the complete visual system is
+   discoverable from one entry point without another folder layer. */
+@import "./dashboard.css";
+@import "./profile.css";
+@import "./settings.css";
 :root {
   font-family: Manrope, Inter, system-ui, sans-serif;
   color: #f5f5f5;

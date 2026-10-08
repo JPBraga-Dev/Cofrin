@@ -1,7 +1,7 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { profileRepository, passwordResetRepository, sessionRepository, userRepository } from "../repositories/security.js";
-import { AppError } from "../utils/appError.js";
-import type { LoginInput, RegisterInput } from "../validators/authSchemas.js";
+import { AppError } from "../core/appError.js";
+import type { LoginInput, RegisterInput } from "../core/authSchemas.js";
 import { audit, pseudonymize } from "./auditService.js";
 import { normalizeEmail, requireAvailableUsername } from "./identityService.js";
 import { DUMMY_PASSWORD_HASH, hashPassword, passwordNeedsRehash, verifyPassword } from "./passwordService.js";

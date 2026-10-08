@@ -1,8 +1,8 @@
 import { mockDatabase } from "../data/mockDatabase.js";
-import type { CreditCard, CreditCardInvoicePayment, Transaction } from "../domain/types.js";
-import { fromCents, sumInCents, toCents } from "../domain/money.js";
+import type { CreditCard, CreditCardInvoicePayment, Transaction } from "../core/types.js";
+import { fromCents, sumInCents, toCents } from "../core/money.js";
 import { accountBalance } from "./accountService.js";
-import { AppError } from "../utils/appError.js";
+import { AppError } from "../core/appError.js";
 
 const stamp = () => new Date().toISOString();
 const day = () => stamp().slice(0, 10);

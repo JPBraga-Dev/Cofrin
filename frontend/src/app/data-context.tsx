@@ -3,7 +3,7 @@ import type {
   Budget, BudgetInput, CardInput, Conversation, ConversationView, CreditCard,
   FriendRequest, Group, GroupExpense, GroupInput, Message, Notification, PiggyBank,
   PiggyInput, Profile, Transaction, TransactionInput,
-} from "../types";
+} from "./types";
 
 export type Resource = "transactions" | "piggies" | "groups" | "budgets" | "cards" | "notifications" | "social";
 export type ResourceStatus = { status: "idle" | "loading" | "ready" | "error"; error: string | null };

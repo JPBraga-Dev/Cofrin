@@ -1,4 +1,4 @@
-import { AppError } from "../utils/appError.js";
+import { AppError } from "../core/appError.js";
 
 export interface PasswordResetNotification {
   email: string;

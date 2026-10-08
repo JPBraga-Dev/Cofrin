@@ -12,7 +12,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, CircleDashed, Eye, EyeOff, X, type LucideIcon } from "lucide-react";
 import { motionTokens } from "./motion";
-import { formatCurrency } from "../utils/format";
+import { formatCurrency } from "../app/format";
 
 const avatarInitials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "?";
 export function UserAvatar({ src, name, className = "", alt }: { src?: string; name: string; className?: string; alt?: string }) {

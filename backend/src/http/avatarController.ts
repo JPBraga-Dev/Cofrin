@@ -4,8 +4,8 @@ import { profileRepository } from "../repositories/security.js";
 import { audit } from "../services/auditService.js";
 import { localProfileImageStorage } from "../services/avatarStorage.js";
 import { safeIdentity } from "../services/authService.js";
-import { AppError } from "../utils/appError.js";
-import { profileUpdateSchema } from "../validators/authSchemas.js";
+import { AppError } from "../core/appError.js";
+import { profileUpdateSchema } from "../core/authSchemas.js";
 import { validateUsername } from "../services/socialService.js";
 
 const MAX_PIXELS = 24_000_000;

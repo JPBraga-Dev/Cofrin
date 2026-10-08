@@ -2,7 +2,7 @@ import type {
   Group,
   GroupExpense,
   GroupExpenseSplit,
-} from "../domain/types.js";
+} from "../core/types.js";
 import {
   splitByPercentage,
   splitByShares,
@@ -10,7 +10,7 @@ import {
   splitManual,
 } from "./financeRules.js";
 import { profileById } from "./socialService.js";
-import { fromCents, toCents } from "../domain/money.js";
+import { fromCents, toCents } from "../core/money.js";
 
 export type SplitInput = {
   userId: string;

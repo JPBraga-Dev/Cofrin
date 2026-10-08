@@ -1,4 +1,4 @@
-import type { Budget, Group, PiggyBank, Transaction } from '../domain/types.js';
+import type { Budget, Group, PiggyBank, Transaction } from '../core/types.js';
 export interface TransactionRepository { list():Promise<Transaction[]>; findById(id:string):Promise<Transaction|undefined>; create(transaction:Transaction):Promise<Transaction>; update(id:string, patch:Partial<Transaction>):Promise<Transaction|undefined>; delete(id:string):Promise<boolean>; }
 export interface PiggyBankRepository { list():Promise<PiggyBank[]>; findById(id:string):Promise<PiggyBank|undefined>; create(item:PiggyBank):Promise<PiggyBank>; update(id:string,patch:Partial<PiggyBank>):Promise<PiggyBank|undefined>; }
 export interface GroupRepository { list():Promise<Group[]>; findById(id:string):Promise<Group|undefined>; create(item:Group):Promise<Group>; update(id:string,patch:Partial<Group>):Promise<Group|undefined>; }

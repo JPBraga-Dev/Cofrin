@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AuthProvider, useAuth } from "./AuthProvider";
+import { AuthProvider, useAuth } from "./auth";
 
 const mocks = vi.hoisted(() => {
   class MockApiError extends Error {
@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => {
   }
   return { MockApiError, authMe: vi.fn() };
 });
-vi.mock("../services/api", () => ({
+vi.mock("./api", () => ({
   ApiError: mocks.MockApiError,
   api: { authMe: mocks.authMe, login: vi.fn(), register: vi.fn(), logout: vi.fn(), forgotPassword: vi.fn(), resetPassword: vi.fn(), changePassword: vi.fn(), listSessions: vi.fn(), revokeOtherSessions: vi.fn() },
 }));

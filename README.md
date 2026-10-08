@@ -14,6 +14,12 @@ O produto roda de ponta a ponta com React e uma API Express. A persistência ati
 - Autenticação: própria do Cofrin, com cookie `HttpOnly`, sessão revogável, validade absoluta de 7 dias e inatividade máxima de 24 horas.
 - Dinheiro: regras executadas em centavos inteiros; valores decimais existem apenas nas bordas da API e da interface.
 
+## Onde encontrar cada coisa
+
+A estrutura foi reduzida para evitar pastas técnicas espalhadas. Para alterar uma tela, abra `frontend/src/pages`; para componentes visuais reutilizáveis, use `frontend/src/components`; e para tudo que conecta o aplicativo (API, tipos, autenticação, estado e formatação), use `frontend/src/app`.
+
+No servidor, `backend/src/http` reúne rotas, controllers e proteções HTTP; `backend/src/core` concentra tipos, validações, dinheiro e erros; os serviços de negócio ficam em `backend/src/services`; e os dados/adapters ficam em `backend/src/data` e `backend/src/repositories`.
+
 ## Executar localmente
 
 Requisitos: Node.js 20+ e npm 10+.

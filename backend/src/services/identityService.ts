@@ -1,5 +1,5 @@
 import { profileRepository } from "../repositories/security.js";
-import { AppError } from "../utils/appError.js";
+import { AppError } from "../core/appError.js";
 
 export const RESERVED_USERNAMES = new Set([
   "admin", "administrator", "root", "api", "auth", "login", "logout", "register", "signup",

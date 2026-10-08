@@ -4,7 +4,7 @@ import { SEED_USER_IDS } from "../src/data/seedIds.js";
 import { accountBalance } from "../src/services/accountService.js";
 import { groupFund } from "../src/services/groupFinanceService.js";
 import { registerGroupExpense } from "../src/services/transferService.js";
-import { fromCents, toCents } from "../src/domain/money.js";
+import { fromCents, toCents } from "../src/core/money.js";
 
 const group = () => mockDatabase.groups.find((item) => item.id === "g1")!;
 let expensesBefore = [...group().expenses];

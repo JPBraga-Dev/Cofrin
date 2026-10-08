@@ -32,8 +32,8 @@ import {
   friendRequestSchema,
   directConversationSchema,
   messageSchema,
-} from "../validators/schemas.js";
-import { notFound, ok } from "../utils/http.js";
+} from "../core/schemas.js";
+import { notFound, ok } from "../core/http.js";
 import {
   acceptRequest,
   directConversation,
@@ -54,17 +54,17 @@ import {
   updateOwnProfile,
   validateUsername,
 } from "../services/socialService.js";
-import { profileUpdateSchema, usernameCheckSchema } from "../validators/authSchemas.js";
+import { profileUpdateSchema, usernameCheckSchema } from "../core/authSchemas.js";
 import { safeIdentity } from "../services/authService.js";
-import { AppError } from "../utils/appError.js";
-import { fromCents, sumInCents } from "../domain/money.js";
+import { AppError } from "../core/appError.js";
+import { fromCents, sumInCents } from "../core/money.js";
 import { cardInvoices, installmentSchedule, invoiceReferenceForPurchase, payCardInvoice } from "../services/creditCardService.js";
 const id = () => crypto.randomUUID();
 const now = () => new Date().toISOString();
 const authUserId = (req: Request) => req.auth!.user.id;
 const routeId = (req: Request) =>
   Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-const settlementsFor = (group: import("../domain/types.js").Group) => {
+const settlementsFor = (group: import("../core/types.js").Group) => {
   const paid = new Map(group.settlements.map((item) => [item.id, item]));
   return calculateSettlements(calculateGroupBalances(group)).map((item) => {
     const id = `${item.fromUserId}-${item.toUserId}`;
@@ -90,7 +90,7 @@ const currentBudgetAmount = (userId: string, categoryId: string, referenceMonth?
         (!referenceMonth || item.date.startsWith(referenceMonth)),
     )
     .reduce((total, item) => total + item.amount, 0);
-const presentGroup = (group: import("../domain/types.js").Group) => {
+const presentGroup = (group: import("../core/types.js").Group) => {
   const balances = new Map(
     calculateGroupBalances(group).map((item) => [item.userId, item.balance]),
   );
@@ -158,7 +158,7 @@ export async function createTransaction(req: Request, res: Response) {
   const stamp = now();
   const base = {
     userId,
-    nature: (creditCard ? "CREDIT_CARD" : "PERSONAL") as import("../domain/types.js").Transaction["nature"],
+    nature: (creditCard ? "CREDIT_CARD" : "PERSONAL") as import("../core/types.js").Transaction["nature"],
     financialScope: "PERSONAL" as const,
     status: value.type === "INCOME" ? "RECEIVED" as const : "PAID" as const,
     recurrenceType: value.recurrenceType ?? "SINGLE" as const,
@@ -169,7 +169,7 @@ export async function createTransaction(req: Request, res: Response) {
   };
   if (creditCard && value.type === "EXPENSE" && value.recurrenceType === "INSTALLMENT" && (value.installmentCount ?? 0) > 1) {
     const seriesId = id();
-    const created: import("../domain/types.js").Transaction[] = [];
+    const created: import("../core/types.js").Transaction[] = [];
     try {
       for (const installment of installmentSchedule(value.amount, value.installmentCount!, value.date, creditCard))
         created.push(await transactionRepository.create({ ...base, id: id(), parentTransactionId: seriesId, ...installment }));

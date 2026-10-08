@@ -3,10 +3,10 @@ import cookieParser from "cookie-parser";
 import express from "express";
 import helmet from "helmet";
 import { avatarStorageRoot, coverStorageRoot } from "./services/avatarStorage.js";
-import { errorHandler } from "./middlewares/errorHandler.js";
-import { allowedOrigins, csrfOriginProtection, requestAuditLogger } from "./middlewares/security.js";
-import { api } from "./routes/index.js";
-import { AppError } from "./utils/appError.js";
+import { errorHandler } from "./http/errorHandler.js";
+import { allowedOrigins, csrfOriginProtection, requestAuditLogger } from "./http/security.js";
+import { api } from "./http/routes.js";
+import { AppError } from "./core/appError.js";
 
 export const app = express();
 app.disable("x-powered-by");

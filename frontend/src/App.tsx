@@ -3,9 +3,9 @@ import { AnimatePresence } from "framer-motion";
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Button, Card, PageHeader, PasswordInput, Skeleton, Toast } from "./components/ui";
 import { Header, MobileNavigation, Sidebar } from "./components/layout";
-import { AppDataProvider, useAppData } from "./providers/AppDataProvider";
-import { useAuth } from "./providers/AuthProvider";
-import { api, ApiError } from "./services/api";
+import { AppDataProvider, useAppData } from "./app/data";
+import { useAuth } from "./app/auth";
+import { api, ApiError } from "./app/api";
 
 const DashboardPage = lazy(() => import("./pages/DashboardPage").then((module) => ({ default: module.DashboardPage })));
 const EnhancedTransactions = lazy(() => import("./pages/EnhancedPages").then((module) => ({ default: module.EnhancedTransactions })));

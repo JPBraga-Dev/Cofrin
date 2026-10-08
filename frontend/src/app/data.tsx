@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { api } from "../services/api";
-import { preferences } from "../services/preferences";
-import { useAuth } from "./AuthProvider";
-import type { Budget, ConversationView, CreditCard, Group, Notification, PiggyBank, Profile, Transaction } from "../types";
-import { AppDataContext, type AppData, type Mutation, type Resource, type ResourceStatus } from "./AppDataContext";
-import { useConversationMessages } from "./useConversationMessages";
+import { api } from "./api";
+import { preferences } from "./preferences";
+import { useAuth } from "./auth";
+import type { Budget, ConversationView, CreditCard, Group, Notification, PiggyBank, Profile, Transaction } from "./types";
+import { AppDataContext, type AppData, type Mutation, type Resource, type ResourceStatus } from "./data-context";
+import { useConversationMessages } from "./messages";
 const replace = <T extends { id: string }>(items: T[], item: T) =>
   items.map((value) => (value.id === item.id ? item : value));
 
@@ -347,5 +347,5 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
 }
 
-export { useAppData } from "./AppDataContext";
-export type { GroupExpenseAction, MessageResource } from "./AppDataContext";
+export { useAppData } from "./data-context";
+export type { GroupExpenseAction, MessageResource } from "./data-context";

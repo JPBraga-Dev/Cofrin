@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { budgetSpent } from "../../frontend/src/utils/selectors.js";
-import type { Budget, Transaction } from "../../frontend/src/types/index.js";
+import { budgetSpent } from "../../frontend/src/app/selectors.js";
+import type { Budget, Transaction } from "../../frontend/src/app/types.js";
 import { SEED_USER_IDS } from "../src/data/seedIds.js";
 
 const budget: Budget = {

@@ -50,31 +50,31 @@ import {
   SegmentedControl,
   UserAvatar,
 } from "../components/ui";
-import { useAppData } from "../providers/AppDataProvider";
-import { useAuth } from "../providers/AuthProvider";
-import { ApiError } from "../services/api";
-import type { AuthSession } from "../types";
+import { useAppData } from "../app/data";
+import { useAuth } from "../app/auth";
+import { ApiError } from "../app/api";
+import type { AuthSession } from "../app/types";
 import { GroupConversationPanel } from "./SocialPages";
 import {
   budgetFormSchema,
   groupFormSchema,
   piggyFormSchema,
   transactionFormSchema,
-} from "../services/schemas";
+} from "../app/schemas";
 import type {
   Group,
   PiggyBank,
   Transaction,
   TransactionInput,
   TransactionType,
-} from "../types";
+} from "../app/types";
 import {
   budgetStatus,
   formatCurrency,
   formatDate,
   formatShortDate,
   percent,
-} from "../utils/format";
+} from "../app/format";
 import {
   accountName,
   budgetSpent,
@@ -86,7 +86,7 @@ import {
   spendingByCategory,
   groupFundValue,
   transactionTotals,
-} from "../utils/selectors";
+} from "../app/selectors";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const piggyIconOptions = [

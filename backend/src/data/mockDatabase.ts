@@ -1,4 +1,4 @@
-import type { Account, AuditLog, Budget, Conversation, ConversationMember, CreditCard, CreditCardInvoicePayment, FriendRequest, Friendship, Group, Message, PasswordResetToken, PiggyBank, Profile, Session, Transaction, User } from "../domain/types.js";
+import type { Account, AuditLog, Budget, Conversation, ConversationMember, CreditCard, CreditCardInvoicePayment, FriendRequest, Friendship, Group, Message, PasswordResetToken, PiggyBank, Profile, Session, Transaction, User } from "../core/types.js";
 import { SEED_USER_IDS } from "./seedIds.js";
 const now = "2026-08-31T12:00:00.000Z";
 const {

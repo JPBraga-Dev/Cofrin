@@ -1,4 +1,4 @@
-import type { Session, User } from "../domain/types.js";
+import type { Session, User } from "./types.js";
 
 declare global {
   namespace Express {

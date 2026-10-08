@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import type { NextFunction, Request, RequestHandler, Response } from "express";
-import { AppError } from "../utils/appError.js";
+import { AppError } from "../core/appError.js";
 import { authenticateSession, SESSION_COOKIE } from "../services/sessionService.js";
 
 export const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174")

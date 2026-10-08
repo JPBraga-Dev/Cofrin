@@ -1,4 +1,4 @@
-import type { Budget, CreditCard, Group, InvoiceSummary, InvoiceView, PiggyBank, Transaction } from "../types";
+import type { Budget, CreditCard, Group, InvoiceSummary, InvoiceView, PiggyBank, Transaction } from "./types";
 
 const categories: Record<string, string> = {
   salary: "Salário",

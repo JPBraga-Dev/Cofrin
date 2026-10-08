@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Camera, Check, ChevronLeft, ChevronRight, Copy, ImageIcon, Mail, MessageCircle, Pencil, Search, Send, UserPlus, UsersRound, ZoomIn } from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { api } from "../services/api";
-import { useAppData } from "../providers/AppDataProvider";
-import type { Profile } from "../types";
+import { api } from "../app/api";
+import { useAppData } from "../app/data";
+import type { Profile } from "../app/types";
 import { Badge, Button, Card, Drawer, DrawerFooter, DrawerHeader, EmptyState, FormHint, FormSection, PageHeader, SegmentedControl, Skeleton, UserAvatar } from "../components/ui";
 
 export function Avatar({ profile, size = "normal" }: { profile: Pick<Profile, "displayName" | "avatarUrl">; size?: "small" | "normal" | "large" }) {

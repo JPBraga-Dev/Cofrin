@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fromCents, sumInCents, toCents } from "../src/domain/money.js";
+import { fromCents, sumInCents, toCents } from "../src/core/money.js";
 
 describe("money in cents", () => {
   it("normalizes decimal input at the domain boundary", () => {

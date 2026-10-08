@@ -21,11 +21,11 @@ import {
   X,
 } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { useAppData } from "../providers/AppDataProvider";
-import { useAuth } from "../providers/AuthProvider";
-import { categoryName } from "../utils/selectors";
+import { useAppData } from "../app/data";
+import { useAuth } from "../app/auth";
+import { categoryName } from "../app/selectors";
 import { Drawer, DrawerHeader, PrivacyButton, UserAvatar } from "./ui";
-import { useDismissableLayer } from "../hooks/useDismissableLayer";
+import { useDismissableLayer } from "../app/dismissable";
 
 export const navigationItems = [
   {

@@ -1,7 +1,7 @@
 import type { ErrorRequestHandler } from "express";
 import multer from "multer";
 import { ZodError } from "zod";
-import { AppError } from "../utils/appError.js";
+import { AppError } from "../core/appError.js";
 import { audit } from "../services/auditService.js";
 
 export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {

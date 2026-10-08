@@ -5,9 +5,9 @@ import { useNavigate } from "react-router-dom";
 import { useState, type ReactNode } from "react";
 import { Button, Card, EmptyState, MoneyValue, PageHeader, Progress } from "../components/ui";
 import { dashboardEntrance, motionTokens } from "../components/motion";
-import { useAppData } from "../providers/AppDataProvider";
-import { formatCurrency, formatDate, formatShortDate, percent } from "../utils/format";
-import { accountName, budgetSpent, categoryName, expenseObligations, groupFundValue, groupLabel, personalLedgerTransactions, piggyTotal, spendingByCategory } from "../utils/selectors";
+import { useAppData } from "../app/data";
+import { formatCurrency, formatDate, formatShortDate, percent } from "../app/format";
+import { accountName, budgetSpent, categoryName, expenseObligations, groupFundValue, groupLabel, personalLedgerTransactions, piggyTotal, spendingByCategory } from "../app/selectors";
 
 const categoryColors = ["#3b82f6", "#d4a72c", "#dc2626", "#71717a"];
 const formatMonth = (value: string) => new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(new Date(`${value}-01T12:00:00`));

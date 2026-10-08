@@ -1,5 +1,5 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
-import type { Session } from "../domain/types.js";
+import type { Session } from "../core/types.js";
 import { sessionRepository, userRepository } from "../repositories/security.js";
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;

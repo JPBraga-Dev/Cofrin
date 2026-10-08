@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { AuthSession, Profile } from "../types";
-import { api, ApiError } from "../services/api";
+import type { AuthSession, Profile } from "./types";
+import { api, ApiError } from "./api";
 
 type AuthStatus = "INITIALIZING" | "AUTHENTICATED" | "UNAUTHENTICATED" | "ERROR";
 type AuthContextValue = {

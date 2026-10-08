@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api } from "../services/api";
-import type { Message } from "../types";
-import type { MessageResource } from "./AppDataContext";
+import { api } from "./api";
+import type { Message } from "./types";
+import type { MessageResource } from "./data-context";
 
 export function useConversationMessages() {
   const [messageResources, setMessageResources] = useState<Record<string, MessageResource>>({});

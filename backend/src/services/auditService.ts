@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { mockDatabase } from "../data/mockDatabase.js";
-import type { AuditEventType } from "../domain/types.js";
-import { redactSensitiveFields } from "../utils/redaction.js";
+import type { AuditEventType } from "../core/types.js";
+import { redactSensitiveFields } from "../core/redaction.js";
 
 export const pseudonymize = (value: string) => createHash("sha256").update(value).digest("hex").slice(0, 16);
 export function audit(eventType: AuditEventType, userId?: string, metadata?: Record<string, unknown>) {

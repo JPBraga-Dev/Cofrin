@@ -1,8 +1,8 @@
 import { mockDatabase } from "../data/mockDatabase.js";
-import type { Group, GroupContribution, GroupExpense, GroupFundMovement, PiggyBank, Transaction } from "../domain/types.js";
+import type { Group, GroupContribution, GroupExpense, GroupFundMovement, PiggyBank, Transaction } from "../core/types.js";
 import { accountBalance } from "./accountService.js";
-import { AppError } from "../utils/appError.js";
-import { fromCents, toCents } from "../domain/money.js";
+import { AppError } from "../core/appError.js";
+import { fromCents, toCents } from "../core/money.js";
 import { createSplits, groupFund, type SplitInput } from "./groupFinanceService.js";
 
 const stamp = () => new Date().toISOString();

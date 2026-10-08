@@ -6,10 +6,10 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { app } from "../src/app.js";
 import { mockDatabase } from "../src/data/mockDatabase.js";
 import { SEED_USER_IDS } from "../src/data/seedIds.js";
-import { resetRateLimitsForTests } from "../src/middlewares/security.js";
+import { resetRateLimitsForTests } from "../src/http/security.js";
 import { resetAuthRateLimitsForTests } from "../src/services/authService.js";
 import { hashPassword, passwordNeedsRehash, verifyPassword } from "../src/services/passwordService.js";
-import { redactSensitiveFields } from "../src/utils/redaction.js";
+import { redactSensitiveFields } from "../src/core/redaction.js";
 import { avatarStorageRoot, coverStorageRoot } from "../src/services/avatarStorage.js";
 
 type DatabaseSnapshot = Pick<typeof mockDatabase, "users" | "profiles" | "sessions" | "passwordResetTokens" | "auditLogs" | "accounts">;

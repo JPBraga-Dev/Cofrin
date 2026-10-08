@@ -1,6 +1,6 @@
 import { mockDatabase } from "../data/mockDatabase.js";
-import type { PasswordResetToken, Profile, Session, User } from "../domain/types.js";
-import { AppError } from "../utils/appError.js";
+import type { PasswordResetToken, Profile, Session, User } from "../core/types.js";
+import { AppError } from "../core/appError.js";
 
 export interface UserRepository {
   findById(id: string): Promise<User | undefined>;

@@ -29,7 +29,7 @@ import type {
   TransactionInput,
   PiggyTransferResult,
   AuthSession,
-} from "../types";
+} from "./types";
 
 const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api";
 type ApiEnvelope<T> = { data: T; meta?: { total?: number } };

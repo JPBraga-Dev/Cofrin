@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Budget, CreditCard, Transaction } from "../types";
+import type { Budget, CreditCard, Transaction } from "./types";
 import { budgetSpent, cardInvoiceSummary, expenseObligations, groupFundValue, spendingByCategory } from "./selectors";
 
 const transaction = (overrides: Partial<Transaction>): Transaction => ({

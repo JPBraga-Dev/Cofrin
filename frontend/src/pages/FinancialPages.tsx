@@ -3,13 +3,13 @@ import { CalendarDays, Check, Download, KeyRound, LogOut, MonitorSmartphone, Plu
 import { Area, AreaChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Badge, Button, Card, ChoiceCard, CurrencyInput, Drawer, DrawerFooter, DrawerHeader, EmptyState, FormHint, FormSection, MoneyValue, PageHeader, PasswordInput, Progress } from "../components/ui";
-import { useAppData } from "../providers/AppDataProvider";
-import { useAuth } from "../providers/AuthProvider";
-import { ApiError } from "../services/api";
-import { budgetFormSchema } from "../services/schemas";
-import type { AuthSession, Transaction } from "../types";
-import { budgetStatus, formatCurrency, formatDate, formatShortDate, percent } from "../utils/format";
-import { accountName, budgetSpent, cardInvoiceSummary, categoryName, spendingByCategory, transactionTotals } from "../utils/selectors";
+import { useAppData } from "../app/data";
+import { useAuth } from "../app/auth";
+import { ApiError } from "../app/api";
+import { budgetFormSchema } from "../app/schemas";
+import type { AuthSession, Transaction } from "../app/types";
+import { budgetStatus, formatCurrency, formatDate, formatShortDate, percent } from "../app/format";
+import { accountName, budgetSpent, cardInvoiceSummary, categoryName, spendingByCategory, transactionTotals } from "../app/selectors";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const cardColorClass = (color?: string) => ["carbon", "graphite", "green", "gold", "wine"].includes(color ?? "") ? color! : "carbon";
