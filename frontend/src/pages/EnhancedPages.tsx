@@ -126,7 +126,7 @@ const field = (
 
 function Status({ status }: { status: Transaction["status"] }) {
   const labels = { PAID: "Pago", RECEIVED: "Recebido", PENDING: "Pendente", OVERDUE: "Atrasado" };
-  const tone = status === "OVERDUE" ? "red" : status === "PENDING" ? "gold" : "green";
+  const tone = status === "OVERDUE" ? "red" : status === "PENDING" ? "gold" : status === "RECEIVED" ? "green" : "neutral";
   return <Badge tone={tone}>{labels[status]}</Badge>;
 }
 
