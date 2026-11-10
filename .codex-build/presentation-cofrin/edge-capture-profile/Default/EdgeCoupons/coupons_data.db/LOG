@@ -1,5 +1,0 @@
-2026/10/14-11:53:57.274 900 Creating DB C:\Users\jpbra\Documents\GitHub\Cofrin\.codex-build\presentation-cofrin\edge-capture-profile\Default\EdgeCoupons/coupons_data.db since it was missing.
-2026/10/14-11:53:57.341 900 Reusing MANIFEST C:\Users\jpbra\Documents\GitHub\Cofrin\.codex-build\presentation-cofrin\edge-capture-profile\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
-2026/10/14-11:53:57.648 8d64 Level-0 table #5: started
-2026/10/14-11:53:57.661 8d64 Level-0 table #5: 683273 bytes OK
-2026/10/14-11:53:57.672 8d64 Delete type=0 #3
