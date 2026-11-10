@@ -124,6 +124,14 @@ button {
   width: 30px;
   height: 30px;
   border-radius: 10px;
+  overflow: hidden;
+  background-color: #111827;
+  background-image: url("/brand/cofrin-mascot.png");
+  background-repeat: no-repeat;
+  background-position: center 44%;
+  background-size: 132%;
+  color: transparent;
+  font-size: 0;
 }
 .collapse {
   margin-left: auto;
@@ -1497,6 +1505,22 @@ button.credit-preview {
 .currency-input:focus-within { border-color: var(--blue); }
 .currency-input span { color: var(--blue); }
 .form-field input:focus, .form-field select:focus, .form-field textarea:focus, .filters input:focus, .filters select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59, 130, 246, .14); }
+/* Keep browser autofill aligned with the dark form surface. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--surface-input) inset !important;
+  box-shadow: 0 0 0 1000px var(--surface-input) inset !important;
+  caret-color: var(--text-primary);
+  transition: background-color 9999s ease-out 0s;
+}
 .drawer-preview { box-shadow: none; }
 .piggy-card .piggy-icon { background: #15261b; color: var(--green); }
 .piggy-card { min-width: 0; }

@@ -1,0 +1,1034 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/pages/DashboardPage.tsx");import __vite__cjsImport0_react_jsxDevRuntime from "/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=09927a89"; const Fragment = __vite__cjsImport0_react_jsxDevRuntime["Fragment"]; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
+let prevRefreshReg;
+let prevRefreshSig;
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+  prevRefreshReg = window.$RefreshReg$;
+  prevRefreshSig = window.$RefreshSig$;
+  window.$RefreshReg$ = RefreshRuntime.getRefreshReg("C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx");
+  window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;
+}
+var _s = $RefreshSig$();
+import { AnimatePresence, motion } from "/node_modules/.vite/deps/framer-motion.js?v=09927a89";
+import { ArrowDownRight, ArrowLeftRight, ArrowRight, ArrowUpRight, CalendarClock, ChevronLeft, ChevronRight, CircleDollarSign, Plus, Wallet } from "/node_modules/.vite/deps/lucide-react.js?v=09927a89";
+import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "/node_modules/.vite/deps/recharts.js?v=09927a89";
+import { useNavigate } from "/node_modules/.vite/deps/react-router-dom.js?v=09927a89";
+import __vite__cjsImport7_react from "/node_modules/.vite/deps/react.js?v=09927a89"; const useState = __vite__cjsImport7_react["useState"];
+import { Button, Card, EmptyState, MoneyValue, PageHeader, Progress } from "/src/components/ui.tsx";
+import { dashboardEntrance, motionTokens } from "/src/components/motion.ts";
+import { useAppData } from "/src/app/data.tsx";
+import { formatCurrency, formatDate, formatShortDate, percent } from "/src/app/format.ts";
+import { accountName, budgetSpent, categoryName, expenseObligations, groupFundValue, groupLabel, personalLedgerTransactions, piggyTotal, spendingByCategory } from "/src/app/selectors.ts";
+const categoryColors = ["#3b82f6", "#d4a72c", "#dc2626", "#71717a"];
+const formatMonth = (value) => new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(/* @__PURE__ */ new Date(`${value}-01T12:00:00`));
+function DashboardSection({ children, index, className = "" }) {
+  return /* @__PURE__ */ jsxDEV(motion.section, { className: `dashboard-section ${className}`, initial: dashboardEntrance.initial, animate: dashboardEntrance.animate, transition: { ...dashboardEntrance.transition, delay: index * 0.035 }, children }, void 0, false, {
+    fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+    lineNumber: 35,
+    columnNumber: 10
+  }, this);
+}
+_c = DashboardSection;
+function SummaryReveal({ children, delay, className = "" }) {
+  return /* @__PURE__ */ jsxDEV(motion.div, { className: `summary-reveal ${className}`, initial: { opacity: 0, y: 5 }, animate: { opacity: 1, y: 0 }, transition: { duration: motionTokens.normal, delay, ease: motionTokens.ease }, children }, void 0, false, {
+    fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+    lineNumber: 39,
+    columnNumber: 10
+  }, this);
+}
+_c2 = SummaryReveal;
+export function DashboardPage() {
+  _s();
+  const navigate = useNavigate();
+  const { transactions, piggies, groups, budgets, accounts, hidden } = useAppData();
+  const latestMonth = [...transactions].sort((a, b) => b.date.localeCompare(a.date))[0]?.date.slice(0, 7) ?? (/* @__PURE__ */ new Date()).toISOString().slice(0, 7);
+  const [referenceMonth, setReferenceMonth] = useState(latestMonth);
+  const monthTransactions = personalLedgerTransactions(transactions).filter((item) => item.date.startsWith(referenceMonth));
+  const income = monthTransactions.filter((item) => item.type === "INCOME").reduce((total, item) => total + item.amount, 0);
+  const expenses = monthTransactions.filter((item) => item.type === "EXPENSE").reduce((total, item) => total + item.amount, 0);
+  const incomeCount = monthTransactions.filter((item) => item.type === "INCOME").length;
+  const expenseCount = monthTransactions.filter((item) => item.type === "EXPENSE").length;
+  const obligations = expenseObligations(monthTransactions);
+  const committed = obligations.reduce((total, item) => total + item.amount, 0);
+  const committedNeedsAttention = obligations.some((item) => item.status === "OVERDUE");
+  const availableBalance = accounts.reduce((total, account) => total + account.balance, 0);
+  const upcoming = [...obligations].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
+  const allCategories = spendingByCategory(monthTransactions).sort((a, b) => b.amount - a.amount);
+  const totalCategorySpend = allCategories.reduce((total, item) => total + item.amount, 0);
+  const categories = allCategories.length > 4 ? [...allCategories.slice(0, 3), { categoryId: "__other__", name: "Outros", amount: allCategories.slice(3).reduce((total, item) => total + item.amount, 0) }] : allCategories.slice(0, 4);
+  const budgetItems = budgets.filter((budget) => budget.referenceMonth === referenceMonth).map((budget) => ({ ...budget, currentAmount: budgetSpent(budget, transactions) })).sort((a, b) => b.currentAmount / b.limitAmount - a.currentAmount / a.limitAmount).slice(0, 3);
+  const flow = Object.entries(monthTransactions.reduce((all, item) => {
+    const value = all[item.date] ?? { income: 0, expense: 0 };
+    if (item.type === "INCOME") value.income += item.amount;
+    if (item.type === "EXPENSE") value.expense += item.amount;
+    all[item.date] = value;
+    return all;
+  }, {})).sort(([a], [b]) => a.localeCompare(b)).map(([date, values]) => ({ day: date.slice(8), ...values }));
+  const recent = [...transactions].sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt)).slice(0, 6);
+  const setMonthOffset = (offset) => {
+    const date = /* @__PURE__ */ new Date(`${referenceMonth}-01T12:00:00`);
+    date.setMonth(date.getMonth() + offset);
+    setReferenceMonth(date.toISOString().slice(0, 7));
+  };
+  return /* @__PURE__ */ jsxDEV("div", { className: "dashboard-page", children: [
+    /* @__PURE__ */ jsxDEV(motion.div, { className: "dashboard-header-block", initial: { opacity: 0, y: 4 }, animate: { opacity: 1, y: 0 }, transition: { duration: motionTokens.normal, ease: motionTokens.ease }, children: [
+      /* @__PURE__ */ jsxDEV(PageHeader, { eyebrow: "Visão financeira", title: "Visão geral", description: "Acompanhe suas decisões do mês em um só lugar.", action: /* @__PURE__ */ jsxDEV(Button, { onClick: () => navigate("/transactions?new=1"), children: [
+        /* @__PURE__ */ jsxDEV(Plus, { size: 16 }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 79,
+          columnNumber: 191
+        }, this),
+        "Novo lançamento"
+      ] }, void 0, true, {
+        fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+        lineNumber: 79,
+        columnNumber: 135
+      }, this) }, void 0, false, {
+        fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+        lineNumber: 79,
+        columnNumber: 7
+      }, this),
+      /* @__PURE__ */ jsxDEV("div", { className: "period-control", "aria-label": "Período de referência", children: [
+        /* @__PURE__ */ jsxDEV("button", { "aria-label": "Mês anterior", onClick: () => setMonthOffset(-1), children: /* @__PURE__ */ jsxDEV(ChevronLeft, { size: 15 }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 81,
+          columnNumber: 78
+        }, this) }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 81,
+          columnNumber: 9
+        }, this),
+        /* @__PURE__ */ jsxDEV(AnimatePresence, { initial: false, mode: "wait", children: /* @__PURE__ */ jsxDEV(motion.strong, { initial: { opacity: 0, y: 2 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -2 }, transition: { duration: motionTokens.fast, ease: motionTokens.ease }, children: formatMonth(referenceMonth) }, referenceMonth, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 82,
+          columnNumber: 54
+        }, this) }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 82,
+          columnNumber: 9
+        }, this),
+        /* @__PURE__ */ jsxDEV("button", { "aria-label": "Próximo mês", onClick: () => setMonthOffset(1), children: /* @__PURE__ */ jsxDEV(ChevronRight, { size: 15 }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 83,
+          columnNumber: 76
+        }, this) }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 83,
+          columnNumber: 9
+        }, this)
+      ] }, void 0, true, {
+        fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+        lineNumber: 80,
+        columnNumber: 7
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+      lineNumber: 78,
+      columnNumber: 5
+    }, this),
+    /* @__PURE__ */ jsxDEV("section", { className: "dashboard-financial", "aria-label": "Resumo financeiro", children: [
+      /* @__PURE__ */ jsxDEV(SummaryReveal, { delay: 0.03, className: "balance-summary-reveal", children: /* @__PURE__ */ jsxDEV(Card, { className: "balance-card dashboard-balance", children: [
+        /* @__PURE__ */ jsxDEV("div", { className: "summary-label balance-kicker", children: [
+          /* @__PURE__ */ jsxDEV(Wallet, { size: 19, strokeWidth: 1.8 }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 88,
+            columnNumber: 165
+          }, this),
+          /* @__PURE__ */ jsxDEV("span", { children: "Saldo disponível" }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 88,
+            columnNumber: 203
+          }, this)
+        ] }, void 0, true, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 88,
+          columnNumber: 119
+        }, this),
+        /* @__PURE__ */ jsxDEV(MoneyValue, { amount: availableBalance, hidden, size: "large" }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 88,
+          columnNumber: 238
+        }, this),
+        /* @__PURE__ */ jsxDEV("div", { className: "balance-footer", children: [
+          /* @__PURE__ */ jsxDEV("span", { children: [
+            accounts.length,
+            " conta",
+            accounts.length === 1 ? "" : "s",
+            " disponível",
+            accounts.length === 1 ? "" : "is"
+          ] }, void 0, true, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 88,
+            columnNumber: 339
+          }, this),
+          /* @__PURE__ */ jsxDEV("i", { "aria-hidden": "true", children: "·" }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 88,
+            columnNumber: 455
+          }, this),
+          /* @__PURE__ */ jsxDEV("span", { children: "Saldo transacional atual" }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 88,
+            columnNumber: 482
+          }, this)
+        ] }, void 0, true, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 88,
+          columnNumber: 307
+        }, this)
+      ] }, void 0, true, {
+        fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+        lineNumber: 88,
+        columnNumber: 70
+      }, this) }, void 0, false, {
+        fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+        lineNumber: 88,
+        columnNumber: 7
+      }, this),
+      /* @__PURE__ */ jsxDEV("div", { className: "financial-stats", children: [
+        /* @__PURE__ */ jsxDEV(SummaryReveal, { delay: 0.06, children: /* @__PURE__ */ jsxDEV(Card, { className: "stat-card income-stat", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "summary-label stat-label", children: [
+            /* @__PURE__ */ jsxDEV("span", { children: "Receitas" }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 90,
+              columnNumber: 119
+            }, this),
+            /* @__PURE__ */ jsxDEV(ArrowUpRight, { size: 19, strokeWidth: 1.8 }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 90,
+              columnNumber: 140
+            }, this)
+          ] }, void 0, true, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 90,
+            columnNumber: 77
+          }, this),
+          /* @__PURE__ */ jsxDEV(MoneyValue, { amount: income, type: "income", hidden }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 90,
+            columnNumber: 190
+          }, this),
+          /* @__PURE__ */ jsxDEV("small", { children: [
+            incomeCount,
+            " ",
+            incomeCount === 1 ? "entrada" : "entradas",
+            " no período"
+          ] }, void 0, true, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 90,
+            columnNumber: 250
+          }, this)
+        ] }, void 0, true, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 90,
+          columnNumber: 37
+        }, this) }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 90,
+          columnNumber: 9
+        }, this),
+        /* @__PURE__ */ jsxDEV(SummaryReveal, { delay: 0.075, children: /* @__PURE__ */ jsxDEV(Card, { className: "stat-card expense-stat", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "summary-label stat-label", children: [
+            /* @__PURE__ */ jsxDEV("span", { children: "Despesas" }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 91,
+              columnNumber: 121
+            }, this),
+            /* @__PURE__ */ jsxDEV(ArrowDownRight, { size: 19, strokeWidth: 1.8 }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 91,
+              columnNumber: 142
+            }, this)
+          ] }, void 0, true, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 91,
+            columnNumber: 79
+          }, this),
+          /* @__PURE__ */ jsxDEV(MoneyValue, { amount: expenses, type: "expense", hidden }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 91,
+            columnNumber: 194
+          }, this),
+          /* @__PURE__ */ jsxDEV("small", { children: [
+            expenseCount,
+            " ",
+            expenseCount === 1 ? "saída" : "saídas",
+            " no período"
+          ] }, void 0, true, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 91,
+            columnNumber: 257
+          }, this)
+        ] }, void 0, true, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 91,
+          columnNumber: 38
+        }, this) }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 91,
+          columnNumber: 9
+        }, this),
+        /* @__PURE__ */ jsxDEV(SummaryReveal, { delay: 0.09, className: "committed-summary-reveal", children: /* @__PURE__ */ jsxDEV(Card, { className: `stat-card committed-card ${committedNeedsAttention ? "attention" : ""}`, children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "summary-label stat-label", children: [
+            /* @__PURE__ */ jsxDEV("span", { children: "Comprometido" }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 92,
+              columnNumber: 207
+            }, this),
+            /* @__PURE__ */ jsxDEV(CalendarClock, { size: 19, strokeWidth: 1.8 }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 92,
+              columnNumber: 232
+            }, this)
+          ] }, void 0, true, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 92,
+            columnNumber: 165
+          }, this),
+          /* @__PURE__ */ jsxDEV(MoneyValue, { amount: committed, hidden }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 92,
+            columnNumber: 283
+          }, this),
+          /* @__PURE__ */ jsxDEV("small", { children: "Contas pendentes ou atrasadas neste mês." }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 92,
+            columnNumber: 332
+          }, this)
+        ] }, void 0, true, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 92,
+          columnNumber: 74
+        }, this) }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 92,
+          columnNumber: 9
+        }, this)
+      ] }, void 0, true, {
+        fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+        lineNumber: 89,
+        columnNumber: 7
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+      lineNumber: 87,
+      columnNumber: 5
+    }, this),
+    /* @__PURE__ */ jsxDEV(DashboardSection, { index: 3, children: [
+      /* @__PURE__ */ jsxDEV("div", { className: "section-heading", children: /* @__PURE__ */ jsxDEV("div", { children: [
+        /* @__PURE__ */ jsxDEV("h2", { children: "Fluxo financeiro" }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 97,
+          columnNumber: 45
+        }, this),
+        /* @__PURE__ */ jsxDEV("p", { children: [
+          "Receitas e despesas ao longo de ",
+          formatMonth(referenceMonth),
+          "."
+        ] }, void 0, true, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 97,
+          columnNumber: 70
+        }, this)
+      ] }, void 0, true, {
+        fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+        lineNumber: 97,
+        columnNumber: 40
+      }, this) }, void 0, false, {
+        fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+        lineNumber: 97,
+        columnNumber: 7
+      }, this),
+      /* @__PURE__ */ jsxDEV("div", { className: "dashboard-flow", children: [
+        /* @__PURE__ */ jsxDEV(Card, { className: "flow-card", children: flow.length ? /* @__PURE__ */ jsxDEV(ResponsiveContainer, { width: "100%", height: 276, children: /* @__PURE__ */ jsxDEV(BarChart, { data: flow, barGap: 5, children: [
+          /* @__PURE__ */ jsxDEV(XAxis, { dataKey: "day", tickLine: false, axisLine: false, tick: { fill: "#8d8d94", fontSize: 11 } }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 103,
+            columnNumber: 17
+          }, this),
+          /* @__PURE__ */ jsxDEV(YAxis, { tickLine: false, axisLine: false, tick: { fill: "#8d8d94", fontSize: 10 }, width: 40 }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 104,
+            columnNumber: 17
+          }, this),
+          /* @__PURE__ */ jsxDEV(Tooltip, { cursor: { fill: "#202023" }, contentStyle: { background: "#171719", border: "1px solid #39393e", borderRadius: 10 }, formatter: (value) => formatCurrency(value, hidden) }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 105,
+            columnNumber: 17
+          }, this),
+          /* @__PURE__ */ jsxDEV(Bar, { dataKey: "income", name: "Receitas", fill: "#16a34a", radius: [4, 4, 0, 0] }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 106,
+            columnNumber: 17
+          }, this),
+          /* @__PURE__ */ jsxDEV(Bar, { dataKey: "expense", name: "Despesas", fill: "#dc2626", radius: [4, 4, 0, 0] }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 107,
+            columnNumber: 17
+          }, this)
+        ] }, void 0, true, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 102,
+          columnNumber: 15
+        }, this) }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 101,
+          columnNumber: 11
+        }, this) : /* @__PURE__ */ jsxDEV(EmptyState, { title: "Sem movimentações neste período", detail: "O fluxo aparece quando houver lançamentos." }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 110,
+          columnNumber: 11
+        }, this) }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 99,
+          columnNumber: 9
+        }, this),
+        /* @__PURE__ */ jsxDEV(Card, { className: "category-card", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "section-heading", children: /* @__PURE__ */ jsxDEV("div", { children: [
+            /* @__PURE__ */ jsxDEV("h2", { children: "Gastos por categoria" }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 112,
+              columnNumber: 79
+            }, this),
+            /* @__PURE__ */ jsxDEV("p", { children: "Distribuição das despesas do período." }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 112,
+              columnNumber: 108
+            }, this)
+          ] }, void 0, true, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 112,
+            columnNumber: 74
+          }, this) }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 112,
+            columnNumber: 41
+          }, this),
+          categories.length ? /* @__PURE__ */ jsxDEV(Fragment, { children: [
+            /* @__PURE__ */ jsxDEV("div", { className: "category-donut", children: /* @__PURE__ */ jsxDEV(ResponsiveContainer, { children: /* @__PURE__ */ jsxDEV(PieChart, { children: [
+              /* @__PURE__ */ jsxDEV(Pie, { data: categories, dataKey: "amount", innerRadius: 47, outerRadius: 66, stroke: "none", children: categories.map((item, index) => /* @__PURE__ */ jsxDEV(Cell, { fill: categoryColors[index] }, item.categoryId, false, {
+                fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                lineNumber: 112,
+                columnNumber: 371
+              }, this)) }, void 0, false, {
+                fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                lineNumber: 112,
+                columnNumber: 250
+              }, this),
+              /* @__PURE__ */ jsxDEV(Tooltip, { contentStyle: { background: "#171719", border: "1px solid #39393e", borderRadius: 10 }, formatter: (value) => formatCurrency(value, hidden) }, void 0, false, {
+                fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                lineNumber: 112,
+                columnNumber: 438
+              }, this)
+            ] }, void 0, true, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 112,
+              columnNumber: 240
+            }, this) }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 112,
+              columnNumber: 219
+            }, this) }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 112,
+              columnNumber: 187
+            }, this),
+            /* @__PURE__ */ jsxDEV("div", { className: "category-list", children: categories.map((item, index) => /* @__PURE__ */ jsxDEV("div", { className: "category-row", children: [
+              /* @__PURE__ */ jsxDEV("i", { className: "dot", style: { background: categoryColors[index] } }, void 0, false, {
+                fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                lineNumber: 112,
+                columnNumber: 753
+              }, this),
+              /* @__PURE__ */ jsxDEV("span", { children: item.name }, void 0, false, {
+                fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                lineNumber: 112,
+                columnNumber: 820
+              }, this),
+              /* @__PURE__ */ jsxDEV("small", { children: [
+                percent(item.amount, totalCategorySpend),
+                "%"
+              ] }, void 0, true, {
+                fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                lineNumber: 112,
+                columnNumber: 844
+              }, this),
+              /* @__PURE__ */ jsxDEV(MoneyValue, { amount: item.amount, hidden, size: "small" }, void 0, false, {
+                fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                lineNumber: 112,
+                columnNumber: 902
+              }, this)
+            ] }, item.categoryId, true, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 112,
+              columnNumber: 701
+            }, this)) }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 112,
+              columnNumber: 637
+            }, this)
+          ] }, void 0, true, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 112,
+            columnNumber: 185
+          }, this) : /* @__PURE__ */ jsxDEV(EmptyState, { title: "Sem gastos neste período", detail: "As despesas aparecerão aqui." }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 112,
+            columnNumber: 986
+          }, this)
+        ] }, void 0, true, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 112,
+          columnNumber: 9
+        }, this)
+      ] }, void 0, true, {
+        fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+        lineNumber: 98,
+        columnNumber: 7
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+      lineNumber: 96,
+      columnNumber: 5
+    }, this),
+    /* @__PURE__ */ jsxDEV(DashboardSection, { index: 4, className: "dashboard-duo", children: [
+      /* @__PURE__ */ jsxDEV(Card, { children: [
+        /* @__PURE__ */ jsxDEV("div", { className: "section-heading", children: [
+          /* @__PURE__ */ jsxDEV("div", { children: [
+            /* @__PURE__ */ jsxDEV("h2", { children: "Próximos compromissos" }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 117,
+              columnNumber: 51
+            }, this),
+            /* @__PURE__ */ jsxDEV("p", { children: "Contas previstas para o período selecionado." }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 117,
+              columnNumber: 81
+            }, this)
+          ] }, void 0, true, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 117,
+            columnNumber: 46
+          }, this),
+          /* @__PURE__ */ jsxDEV(Button, { variant: "ghost", onClick: () => navigate("/calendar"), children: "Calendário" }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 117,
+            columnNumber: 138
+          }, this)
+        ] }, void 0, true, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 117,
+          columnNumber: 13
+        }, this),
+        upcoming.length ? upcoming.map((item) => /* @__PURE__ */ jsxDEV("button", { className: "bill-row dashboard-bill-row", onClick: () => navigate(`/transactions?q=${encodeURIComponent(item.description)}`), children: [
+          /* @__PURE__ */ jsxDEV("span", { className: `bill-date ${item.status === "OVERDUE" ? "overdue" : ""}`, children: formatShortDate(item.date) }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 117,
+            columnNumber: 413
+          }, this),
+          /* @__PURE__ */ jsxDEV("span", { className: "bill-info", children: [
+            /* @__PURE__ */ jsxDEV("strong", { children: item.description }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 117,
+              columnNumber: 552
+            }, this),
+            /* @__PURE__ */ jsxDEV("small", { children: [
+              accountName(item.accountId),
+              " · ",
+              item.status === "OVERDUE" ? "Atrasado" : "Pendente"
+            ] }, void 0, true, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 117,
+              columnNumber: 587
+            }, this)
+          ] }, void 0, true, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 117,
+            columnNumber: 524
+          }, this),
+          /* @__PURE__ */ jsxDEV(MoneyValue, { amount: item.amount, hidden, size: "small" }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 117,
+            columnNumber: 694
+          }, this)
+        ] }, item.id, true, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 117,
+          columnNumber: 267
+        }, this)) : /* @__PURE__ */ jsxDEV(EmptyState, { title: "Nenhum compromisso neste período", detail: "Contas pendentes aparecem aqui." }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 117,
+          columnNumber: 771
+        }, this)
+      ] }, void 0, true, {
+        fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+        lineNumber: 117,
+        columnNumber: 7
+      }, this),
+      /* @__PURE__ */ jsxDEV(Card, { children: [
+        /* @__PURE__ */ jsxDEV("div", { className: "section-heading", children: [
+          /* @__PURE__ */ jsxDEV("div", { children: [
+            /* @__PURE__ */ jsxDEV("h2", { children: "Orçamentos" }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 118,
+              columnNumber: 51
+            }, this),
+            /* @__PURE__ */ jsxDEV("p", { children: "Limites mais próximos." }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 118,
+              columnNumber: 70
+            }, this)
+          ] }, void 0, true, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 118,
+            columnNumber: 46
+          }, this),
+          /* @__PURE__ */ jsxDEV(Button, { variant: "ghost", onClick: () => navigate("/budgets"), children: "Ver todos" }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 118,
+            columnNumber: 105
+          }, this)
+        ] }, void 0, true, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 118,
+          columnNumber: 13
+        }, this),
+        budgetItems.length ? budgetItems.map((item) => {
+          const usage = percent(item.currentAmount, item.limitAmount);
+          const color = usage >= 100 ? "#ef4444" : usage >= 80 ? "#f5c451" : "#3b82f6";
+          const status = usage >= 100 ? "Excedido" : usage >= 80 ? "Atenção" : "Seguro";
+          return /* @__PURE__ */ jsxDEV("button", { className: "dashboard-budget-row", onClick: () => navigate(`/budgets/${item.id}`), children: [
+            /* @__PURE__ */ jsxDEV("span", { children: [
+              /* @__PURE__ */ jsxDEV("strong", { children: categoryName(item.categoryId) }, void 0, false, {
+                fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                lineNumber: 118,
+                columnNumber: 570
+              }, this),
+              /* @__PURE__ */ jsxDEV("small", { children: [
+                /* @__PURE__ */ jsxDEV(MoneyValue, { amount: item.currentAmount, hidden, size: "small" }, void 0, false, {
+                  fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                  lineNumber: 118,
+                  columnNumber: 625
+                }, this),
+                " de ",
+                formatCurrency(item.limitAmount, hidden)
+              ] }, void 0, true, {
+                fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                lineNumber: 118,
+                columnNumber: 618
+              }, this)
+            ] }, void 0, true, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 118,
+              columnNumber: 564
+            }, this),
+            /* @__PURE__ */ jsxDEV("span", { children: [
+              usage,
+              "% · ",
+              status
+            ] }, void 0, true, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 118,
+              columnNumber: 757
+            }, this),
+            /* @__PURE__ */ jsxDEV(Progress, { value: usage, color }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 118,
+              columnNumber: 789
+            }, this),
+            /* @__PURE__ */ jsxDEV("small", { className: "dashboard-remaining", children: [
+              formatCurrency(Math.max(0, item.limitAmount - item.currentAmount), hidden),
+              " restante"
+            ] }, void 0, true, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 118,
+              columnNumber: 829
+            }, this)
+          ] }, item.id, true, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 118,
+            columnNumber: 461
+          }, this);
+        }) : /* @__PURE__ */ jsxDEV(EmptyState, { title: "Nenhum orçamento neste mês", detail: "Crie limites para acompanhar seus gastos." }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 118,
+          columnNumber: 976
+        }, this)
+      ] }, void 0, true, {
+        fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+        lineNumber: 118,
+        columnNumber: 7
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+      lineNumber: 116,
+      columnNumber: 5
+    }, this),
+    /* @__PURE__ */ jsxDEV(DashboardSection, { index: 5, children: [
+      /* @__PURE__ */ jsxDEV("div", { className: "section-heading", children: /* @__PURE__ */ jsxDEV("div", { children: [
+        /* @__PURE__ */ jsxDEV("h2", { children: "Planejamento" }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 122,
+          columnNumber: 45
+        }, this),
+        /* @__PURE__ */ jsxDEV("p", { children: "Metas pessoais e objetivos compartilhados." }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 122,
+          columnNumber: 66
+        }, this)
+      ] }, void 0, true, {
+        fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+        lineNumber: 122,
+        columnNumber: 40
+      }, this) }, void 0, false, {
+        fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+        lineNumber: 122,
+        columnNumber: 7
+      }, this),
+      /* @__PURE__ */ jsxDEV("div", { className: "dashboard-duo", children: [
+        /* @__PURE__ */ jsxDEV(Card, { children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "section-heading", children: [
+            /* @__PURE__ */ jsxDEV("div", { children: [
+              /* @__PURE__ */ jsxDEV("h2", { children: "Metas pessoais" }, void 0, false, {
+                fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                lineNumber: 124,
+                columnNumber: 53
+              }, this),
+              /* @__PURE__ */ jsxDEV("p", { children: [
+                formatCurrency(piggyTotal(piggies), hidden),
+                " guardados"
+              ] }, void 0, true, {
+                fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                lineNumber: 124,
+                columnNumber: 76
+              }, this)
+            ] }, void 0, true, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 124,
+              columnNumber: 48
+            }, this),
+            /* @__PURE__ */ jsxDEV(Button, { variant: "ghost", onClick: () => navigate("/piggy-banks"), children: "Ver todos" }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 124,
+              columnNumber: 144
+            }, this)
+          ] }, void 0, true, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 124,
+            columnNumber: 15
+          }, this),
+          piggies.length ? piggies.slice(0, 3).map((item) => /* @__PURE__ */ jsxDEV("button", { className: "dashboard-plan-row", onClick: () => navigate(`/piggy-banks/${item.id}`), children: [
+            /* @__PURE__ */ jsxDEV("span", { className: "plan-icon", children: /* @__PURE__ */ jsxDEV(CircleDollarSign, { size: 16 }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 124,
+              columnNumber: 418
+            }, this) }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 124,
+              columnNumber: 390
+            }, this),
+            /* @__PURE__ */ jsxDEV("span", { children: [
+              /* @__PURE__ */ jsxDEV("strong", { children: item.name }, void 0, false, {
+                fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                lineNumber: 124,
+                columnNumber: 461
+              }, this),
+              /* @__PURE__ */ jsxDEV("small", { children: [
+                /* @__PURE__ */ jsxDEV(MoneyValue, { amount: item.currentAmount, hidden, size: "small" }, void 0, false, {
+                  fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                  lineNumber: 124,
+                  columnNumber: 496
+                }, this),
+                " de ",
+                formatCurrency(item.targetAmount, hidden)
+              ] }, void 0, true, {
+                fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                lineNumber: 124,
+                columnNumber: 489
+              }, this),
+              /* @__PURE__ */ jsxDEV(Progress, { value: percent(item.currentAmount, item.targetAmount), color: item.status === "COMPLETED" ? "#f5c451" : "#3b82f6" }, void 0, false, {
+                fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                lineNumber: 124,
+                columnNumber: 622
+              }, this),
+              item.currentAmount > item.targetAmount && /* @__PURE__ */ jsxDEV("small", { className: "goal-overage", children: [
+                formatCurrency(item.currentAmount - item.targetAmount, hidden),
+                " acima da meta"
+              ] }, void 0, true, {
+                fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                lineNumber: 124,
+                columnNumber: 792
+              }, this)
+            ] }, void 0, true, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 124,
+              columnNumber: 455
+            }, this),
+            /* @__PURE__ */ jsxDEV("span", { children: item.status === "COMPLETED" ? "Concluída" : `${percent(item.currentAmount, item.targetAmount)}%` }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 124,
+              columnNumber: 918
+            }, this)
+          ] }, item.id, true, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 124,
+            columnNumber: 285
+          }, this)) : /* @__PURE__ */ jsxDEV(EmptyState, { title: "Nenhuma meta pessoal ativa", detail: "Crie um porquinho para planejar uma meta." }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 124,
+            columnNumber: 1042
+          }, this)
+        ] }, void 0, true, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 124,
+          columnNumber: 9
+        }, this),
+        /* @__PURE__ */ jsxDEV(Card, { children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "section-heading", children: [
+            /* @__PURE__ */ jsxDEV("div", { children: [
+              /* @__PURE__ */ jsxDEV("h2", { children: "Grupos" }, void 0, false, {
+                fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                lineNumber: 125,
+                columnNumber: 53
+              }, this),
+              /* @__PURE__ */ jsxDEV("p", { children: "Planejamento compartilhado." }, void 0, false, {
+                fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                lineNumber: 125,
+                columnNumber: 68
+              }, this)
+            ] }, void 0, true, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 125,
+              columnNumber: 48
+            }, this),
+            /* @__PURE__ */ jsxDEV(Button, { variant: "ghost", onClick: () => navigate("/groups"), children: "Ver todos" }, void 0, false, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 125,
+              columnNumber: 108
+            }, this)
+          ] }, void 0, true, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 125,
+            columnNumber: 15
+          }, this),
+          groups.length ? groups.slice(0, 3).map((item) => {
+            const fund = groupFundValue(item);
+            return /* @__PURE__ */ jsxDEV("button", { className: "dashboard-plan-row", onClick: () => navigate(`/groups/${item.id}`), children: [
+              /* @__PURE__ */ jsxDEV("span", { className: "plan-icon", children: /* @__PURE__ */ jsxDEV(CircleDollarSign, { size: 16 }, void 0, false, {
+                fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                lineNumber: 125,
+                columnNumber: 412
+              }, this) }, void 0, false, {
+                fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                lineNumber: 125,
+                columnNumber: 384
+              }, this),
+              /* @__PURE__ */ jsxDEV("span", { children: [
+                /* @__PURE__ */ jsxDEV("strong", { children: item.name }, void 0, false, {
+                  fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                  lineNumber: 125,
+                  columnNumber: 455
+                }, this),
+                /* @__PURE__ */ jsxDEV("small", { children: [
+                  groupLabel(item.type),
+                  " · ",
+                  item.members.length,
+                  " participante(s)"
+                ] }, void 0, true, {
+                  fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                  lineNumber: 125,
+                  columnNumber: 483
+                }, this),
+                item.targetAmount && /* @__PURE__ */ jsxDEV(Fragment, { children: [
+                  /* @__PURE__ */ jsxDEV("small", { children: [
+                    /* @__PURE__ */ jsxDEV(MoneyValue, { amount: fund, hidden, size: "small" }, void 0, false, {
+                      fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                      lineNumber: 125,
+                      columnNumber: 592
+                    }, this),
+                    " de ",
+                    formatCurrency(item.targetAmount, hidden)
+                  ] }, void 0, true, {
+                    fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                    lineNumber: 125,
+                    columnNumber: 585
+                  }, this),
+                  /* @__PURE__ */ jsxDEV(Progress, { value: percent(fund, item.targetAmount) }, void 0, false, {
+                    fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                    lineNumber: 125,
+                    columnNumber: 704
+                  }, this)
+                ] }, void 0, true, {
+                  fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                  lineNumber: 125,
+                  columnNumber: 583
+                }, this)
+              ] }, void 0, true, {
+                fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                lineNumber: 125,
+                columnNumber: 449
+              }, this),
+              item.targetAmount && /* @__PURE__ */ jsxDEV("span", { children: [
+                percent(fund, item.targetAmount),
+                "%"
+              ] }, void 0, true, {
+                fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+                lineNumber: 125,
+                columnNumber: 790
+              }, this)
+            ] }, item.id, true, {
+              fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+              lineNumber: 125,
+              columnNumber: 284
+            }, this);
+          }) : /* @__PURE__ */ jsxDEV(EmptyState, { title: "Nenhum planejamento compartilhado", detail: "Crie ou entre em um grupo para acompanhar objetivos juntos." }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 125,
+            columnNumber: 854
+          }, this)
+        ] }, void 0, true, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 125,
+          columnNumber: 9
+        }, this)
+      ] }, void 0, true, {
+        fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+        lineNumber: 123,
+        columnNumber: 7
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+      lineNumber: 121,
+      columnNumber: 5
+    }, this),
+    /* @__PURE__ */ jsxDEV(DashboardSection, { index: 6, children: /* @__PURE__ */ jsxDEV(Card, { children: [
+      /* @__PURE__ */ jsxDEV("div", { className: "section-heading", children: [
+        /* @__PURE__ */ jsxDEV("div", { children: [
+          /* @__PURE__ */ jsxDEV("h2", { children: "Atividade recente" }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 129,
+            columnNumber: 77
+          }, this),
+          /* @__PURE__ */ jsxDEV("p", { children: "Histórico mais recente, independente do mês selecionado." }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 129,
+            columnNumber: 103
+          }, this)
+        ] }, void 0, true, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 129,
+          columnNumber: 72
+        }, this),
+        /* @__PURE__ */ jsxDEV(Button, { variant: "ghost", onClick: () => navigate("/transactions"), children: [
+          "Ver todos os lançamentos ",
+          /* @__PURE__ */ jsxDEV(ArrowRight, { size: 14 }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 129,
+            columnNumber: 263
+          }, this)
+        ] }, void 0, true, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 129,
+          columnNumber: 172
+        }, this)
+      ] }, void 0, true, {
+        fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+        lineNumber: 129,
+        columnNumber: 39
+      }, this),
+      recent.length ? recent.map((item) => /* @__PURE__ */ jsxDEV(motion.button, { layout: true, className: "transaction-row dashboard-transaction-row", initial: { opacity: 0, y: -4 }, animate: { opacity: 1, y: 0 }, transition: { duration: motionTokens.fast, ease: motionTokens.ease }, onClick: () => navigate(`/transactions?q=${encodeURIComponent(item.description)}`), children: [
+        /* @__PURE__ */ jsxDEV("span", { className: "transaction-icon", children: item.type === "INCOME" ? /* @__PURE__ */ jsxDEV(ArrowUpRight, { size: 15 }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 129,
+          columnNumber: 708
+        }, this) : item.type === "EXPENSE" ? /* @__PURE__ */ jsxDEV(ArrowDownRight, { size: 15 }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 129,
+          columnNumber: 763
+        }, this) : /* @__PURE__ */ jsxDEV(ArrowLeftRight, { size: 15 }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 129,
+          columnNumber: 794
+        }, this) }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 129,
+          columnNumber: 647
+        }, this),
+        /* @__PURE__ */ jsxDEV("span", { className: "transaction-info", children: [
+          /* @__PURE__ */ jsxDEV("strong", { children: item.description }, void 0, false, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 129,
+            columnNumber: 865
+          }, this),
+          /* @__PURE__ */ jsxDEV("small", { children: [
+            item.financialScope === "SHARED" ? "Fundo compartilhado" : item.type === "TRANSFER" ? "Transferência" : categoryName(item.categoryId),
+            " · ",
+            formatDate(item.date)
+          ] }, void 0, true, {
+            fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+            lineNumber: 129,
+            columnNumber: 900
+          }, this)
+        ] }, void 0, true, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 129,
+          columnNumber: 830
+        }, this),
+        /* @__PURE__ */ jsxDEV(MoneyValue, { amount: item.amount, type: item.type === "INCOME" ? "income" : item.type === "EXPENSE" ? "expense" : void 0, hidden, size: "small" }, void 0, false, {
+          fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+          lineNumber: 129,
+          columnNumber: 1083
+        }, this)
+      ] }, item.id, true, {
+        fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+        lineNumber: 129,
+        columnNumber: 340
+      }, this)) : /* @__PURE__ */ jsxDEV(EmptyState, { title: "Nenhuma atividade recente", detail: "Os lançamentos aparecem aqui assim que forem registrados." }, void 0, false, {
+        fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+        lineNumber: 129,
+        columnNumber: 1258
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+      lineNumber: 129,
+      columnNumber: 33
+    }, this) }, void 0, false, {
+      fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+      lineNumber: 129,
+      columnNumber: 5
+    }, this)
+  ] }, void 0, true, {
+    fileName: "C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx",
+    lineNumber: 77,
+    columnNumber: 10
+  }, this);
+}
+_s(DashboardPage, "z3anjWym3xZSZ1a1iKIQT+tmEdk=", false, function() {
+  return [useNavigate, useAppData];
+});
+_c3 = DashboardPage;
+var _c, _c2, _c3;
+$RefreshReg$(_c, "DashboardSection");
+$RefreshReg$(_c2, "SummaryReveal");
+$RefreshReg$(_c3, "DashboardPage");
+if (import.meta.hot && !inWebWorker) {
+  window.$RefreshReg$ = prevRefreshReg;
+  window.$RefreshSig$ = prevRefreshSig;
+}
+if (import.meta.hot && !inWebWorker) {
+  RefreshRuntime.__hmr_import(import.meta.url).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("C:/Users/jpbra/Documents/GitHub/Cofrin/frontend/src/pages/DashboardPage.tsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+
+//# sourceMappingURL=data:application/json;base64,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RyxTQUFTLGFBQWEsa0JBQWtCeEQsYUFBYXFELEtBQUt1QixVQUFVO0FBQUEsWUFBRTtBQUFBLFlBQUlqRixXQUFXMEQsS0FBS1IsSUFBSTtBQUFBLGVBQXRLO0FBQUE7QUFBQTtBQUFBO0FBQUEsaUJBQXdLO0FBQUEsYUFBOU87QUFBQTtBQUFBO0FBQUE7QUFBQSxlQUFzUDtBQUFBLFFBQU8sdUJBQUMsY0FBVyxRQUFRUSxLQUFLTSxRQUFRLE1BQU1OLEtBQUtHLFNBQVMsV0FBVyxXQUFXSCxLQUFLRyxTQUFTLFlBQVksWUFBWTBELFFBQVcsUUFBZ0IsTUFBSyxXQUFqSjtBQUFBO0FBQUE7QUFBQTtBQUFBLGVBQXdKO0FBQUEsV0FBOXlCN0QsS0FBS29ELElBQXRGO0FBQUE7QUFBQTtBQUFBO0FBQUEsYUFBazRCLENBQWdCLElBQUksdUJBQUMsY0FBVyxPQUFNLDZCQUE0QixRQUFPLCtEQUFyRDtBQUFBO0FBQUE7QUFBQTtBQUFBLGFBQWdIO0FBQUEsU0FBenpDO0FBQUE7QUFBQTtBQUFBO0FBQUEsV0FBNnpDLEtBQXoxQztBQUFBO0FBQUE7QUFBQTtBQUFBLFdBQWcyQztBQUFBLE9BcEQzMUM7QUFBQTtBQUFBO0FBQUE7QUFBQSxTQXFEUDtBQUNGO0FBQUN4RSxHQXpGZUQsZUFBYTtBQUFBLFVBQ1ZqRCxhQUNvRFUsVUFBVTtBQUFBO0FBQUEsTUFGakV1QztBQUFhLElBQUFSLElBQUFPLEtBQUFvRjtBQUFBLGFBQUEzRixJQUFBO0FBQUEsYUFBQU8sS0FBQTtBQUFBLGFBQUFvRixLQUFBIiwibmFtZXMiOlsiQW5pbWF0ZVByZXNlbmNlIiwibW90aW9uIiwiQXJyb3dEb3duUmlnaHQiLCJBcnJvd0xlZnRSaWdodCIsIkFycm93UmlnaHQiLCJBcnJvd1VwUmlnaHQiLCJDYWxlbmRhckNsb2NrIiwiQ2hldnJvbkxlZnQiLCJDaGV2cm9uUmlnaHQiLCJDaXJjbGVEb2xsYXJTaWduIiwiUGx1cyIsIldhbGxldCIsIkJhciIsIkJhckNoYXJ0IiwiQ2VsbCIsIlBpZSIsIlBpZUNoYXJ0IiwiUmVzcG9uc2l2ZUNvbnRhaW5lciIsIlRvb2x0aXAiLCJYQXhpcyIsIllBeGlzIiwidXNlTmF2aWdhdGUiLCJ1c2VTdGF0ZSIsIkJ1dHRvbiIsIkNhcmQiLCJFbXB0eVN0YXRlIiwiTW9uZXlWYWx1ZSIsIlBhZ2VIZWFkZXIiLCJQcm9ncmVzcyIsImRhc2hib2FyZEVudHJhbmNlIiwibW90aW9uVG9rZW5zIiwidXNlQXBwRGF0YSIsImZvcm1hdEN1cnJlbmN5IiwiZm9ybWF0RGF0ZSIsImZvcm1hdFNob3J0RGF0ZSIsInBlcmNlbnQiLCJhY2NvdW50TmFtZSIsImJ1ZGdldFNwZW50IiwiY2F0ZWdvcnlOYW1lIiwiZXhwZW5zZU9ibGlnYXRpb25zIiwiZ3JvdXBGdW5kVmFsdWUiLCJncm91cExhYmVsIiwicGVyc29uYWxMZWRnZXJUcmFuc2FjdGlvbnMiLCJwaWdneVRvdGFsIiwic3BlbmRpbmdCeUNhdGVnb3J5IiwiY2F0ZWdvcnlDb2xvcnMiLCJmb3JtYXRNb250aCIsInZhbHVlIiwiSW50bCIsIkRhdGVUaW1lRm9ybWF0IiwibW9udGgiLCJ5ZWFyIiwiZm9ybWF0IiwiRGF0ZSIsIkRhc2hib2FyZFNlY3Rpb24iLCJjaGlsZHJlbiIsImluZGV4IiwiY2xhc3NOYW1lIiwiaW5pdGlhbCIsImFuaW1hdGUiLCJ0cmFuc2l0aW9uIiwiZGVsYXkiLCJfYyIsIlN1bW1hcnlSZXZlYWwiLCJvcGFjaXR5IiwieSIsImR1cmF0aW9uIiwibm9ybWFsIiwiZWFzZSIsIl9jMiIsIkRhc2hib2FyZFBhZ2UiLCJfcyIsIm5hdmlnYXRlIiwidHJhbnNhY3Rpb25zIiwicGlnZ2llcyIsImdyb3VwcyIsImJ1ZGdldHMiLCJhY2NvdW50cyIsImhpZGRlbiIsImxhdGVzdE1vbnRoIiwic29ydCIsImEiLCJiIiwiZGF0ZSIsImxvY2FsZUNvbXBhcmUiLCJzbGljZSIsInRvSVNPU3RyaW5nIiwicmVmZXJlbmNlTW9udGgiLCJzZXRSZWZlcmVuY2VNb250aCIsIm1vbnRoVHJhbnNhY3Rpb25zIiwiZmlsdGVyIiwiaXRlbSIsInN0YXJ0c1dpdGgiLCJpbmNvbWUiLCJ0eXBlIiwicmVkdWNlIiwidG90YWwiLCJhbW91bnQiLCJleHBlbnNlcyIsImluY29tZUNvdW50IiwibGVuZ3RoIiwiZXhwZW5zZUNvdW50Iiwib2JsaWdhdGlvbnMiLCJjb21taXR0ZWQiLCJjb21taXR0ZWROZWVkc0F0dGVudGlvbiIsInNvbWUiLCJzdGF0dXMiLCJhdmFpbGFibGVCYWxhbmNlIiwiYWNjb3VudCIsImJhbGFuY2UiLCJ1cGNvbWluZyIsImFsbENhdGVnb3JpZXMiLCJ0b3RhbENhdGVnb3J5U3BlbmQiLCJjYXRlZ29yaWVzIiwiY2F0ZWdvcnlJZCIsIm5hbWUiLCJidWRnZXRJdGVtcyIsImJ1ZGdldCIsIm1hcCIsImN1cnJlbnRBbW91bnQiLCJsaW1pdEFtb3VudCIsImZsb3ciLCJPYmplY3QiLCJlbnRyaWVzIiwiYWxsIiwiZXhwZW5zZSIsInZhbHVlcyIsImRheSIsInJlY2VudCIsImNyZWF0ZWRBdCIsInNldE1vbnRoT2Zmc2V0Iiwib2Zmc2V0Iiwic2V0TW9udGgiLCJnZXRNb250aCIsImZhc3QiLCJmaWxsIiwiZm9udFNpemUiLCJiYWNrZ3JvdW5kIiwiYm9yZGVyIiwiYm9yZGVyUmFkaXVzIiwiZW5jb2RlVVJJQ29tcG9uZW50IiwiZGVzY3JpcHRpb24iLCJhY2NvdW50SWQiLCJpZCIsInVzYWdlIiwiY29sb3IiLCJNYXRoIiwibWF4IiwidGFyZ2V0QW1vdW50IiwiZnVuZCIsIm1lbWJlcnMiLCJmaW5hbmNpYWxTY29wZSIsInVuZGVmaW5lZCIsIl9jMyJdLCJpZ25vcmVMaXN0IjpbXSwic291cmNlcyI6WyJEYXNoYm9hcmRQYWdlLnRzeCJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBBbmltYXRlUHJlc2VuY2UsIG1vdGlvbiB9IGZyb20gXCJmcmFtZXItbW90aW9uXCI7XG5pbXBvcnQgeyBBcnJvd0Rvd25SaWdodCwgQXJyb3dMZWZ0UmlnaHQsIEFycm93UmlnaHQsIEFycm93VXBSaWdodCwgQ2FsZW5kYXJDbG9jaywgQ2hldnJvbkxlZnQsIENoZXZyb25SaWdodCwgQ2lyY2xlRG9sbGFyU2lnbiwgUGx1cywgV2FsbGV0IH0gZnJvbSBcImx1Y2lkZS1yZWFjdFwiO1xuaW1wb3J0IHsgQmFyLCBCYXJDaGFydCwgQ2VsbCwgUGllLCBQaWVDaGFydCwgUmVzcG9uc2l2ZUNvbnRhaW5lciwgVG9vbHRpcCwgWEF4aXMsIFlBeGlzIH0gZnJvbSBcInJlY2hhcnRzXCI7XG5pbXBvcnQgeyB1c2VOYXZpZ2F0ZSB9IGZyb20gXCJyZWFjdC1yb3V0ZXItZG9tXCI7XG5pbXBvcnQgeyB1c2VTdGF0ZSwgdHlwZSBSZWFjdE5vZGUgfSBmcm9tIFwicmVhY3RcIjtcbmltcG9ydCB7IEJ1dHRvbiwgQ2FyZCwgRW1wdHlTdGF0ZSwgTW9uZXlWYWx1ZSwgUGFnZUhlYWRlciwgUHJvZ3Jlc3MgfSBmcm9tIFwiLi4vY29tcG9uZW50cy91aVwiO1xuaW1wb3J0IHsgZGFzaGJvYXJkRW50cmFuY2UsIG1vdGlvblRva2VucyB9IGZyb20gXCIuLi9jb21wb25lbnRzL21vdGlvblwiO1xuaW1wb3J0IHsgdXNlQXBwRGF0YSB9IGZyb20gXCIuLi9hcHAvZGF0YVwiO1xuaW1wb3J0IHsgZm9ybWF0Q3VycmVuY3ksIGZvcm1hdERhdGUsIGZvcm1hdFNob3J0RGF0ZSwgcGVyY2VudCB9IGZyb20gXCIuLi9hcHAvZm9ybWF0XCI7XG5pbXBvcnQgeyBhY2NvdW50TmFtZSwgYnVkZ2V0U3BlbnQsIGNhdGVnb3J5TmFtZSwgZXhwZW5zZU9ibGlnYXRpb25zLCBncm91cEZ1bmRWYWx1ZSwgZ3JvdXBMYWJlbCwgcGVyc29uYWxMZWRnZXJUcmFuc2FjdGlvbnMsIHBpZ2d5VG90YWwsIHNwZW5kaW5nQnlDYXRlZ29yeSB9IGZyb20gXCIuLi9hcHAvc2VsZWN0b3JzXCI7XG5cbmNvbnN0IGNhdGVnb3J5Q29sb3JzID0gW1wiIzNiODJmNlwiLCBcIiNkNGE3MmNcIiwgXCIjZGMyNjI2XCIsIFwiIzcxNzE3YVwiXTtcbmNvbnN0IGZvcm1hdE1vbnRoID0gKHZhbHVlOiBzdHJpbmcpID0+IG5ldyBJbnRsLkRhdGVUaW1lRm9ybWF0KFwicHQtQlJcIiwgeyBtb250aDogXCJsb25nXCIsIHllYXI6IFwibnVtZXJpY1wiIH0pLmZvcm1hdChuZXcgRGF0ZShgJHt2YWx1ZX0tMDFUMTI6MDA6MDBgKSk7XG5cbmZ1bmN0aW9uIERhc2hib2FyZFNlY3Rpb24oeyBjaGlsZHJlbiwgaW5kZXgsIGNsYXNzTmFtZSA9IFwiXCIgfTogeyBjaGlsZHJlbjogUmVhY3ROb2RlOyBpbmRleDogbnVtYmVyOyBjbGFzc05hbWU/OiBzdHJpbmcgfSkge1xuICByZXR1cm4gPG1vdGlvbi5zZWN0aW9uIGNsYXNzTmFtZT17YGRhc2hib2FyZC1zZWN0aW9uICR7Y2xhc3NOYW1lfWB9IGluaXRpYWw9e2Rhc2hib2FyZEVudHJhbmNlLmluaXRpYWx9IGFuaW1hdGU9e2Rhc2hib2FyZEVudHJhbmNlLmFuaW1hdGV9IHRyYW5zaXRpb249e3sgLi4uZGFzaGJvYXJkRW50cmFuY2UudHJhbnNpdGlvbiwgZGVsYXk6IGluZGV4ICogMC4wMzUgfX0+e2NoaWxkcmVufTwvbW90aW9uLnNlY3Rpb24+O1xufVxuXG5mdW5jdGlvbiBTdW1tYXJ5UmV2ZWFsKHsgY2hpbGRyZW4sIGRlbGF5LCBjbGFzc05hbWUgPSBcIlwiIH06IHsgY2hpbGRyZW46IFJlYWN0Tm9kZTsgZGVsYXk6IG51bWJlcjsgY2xhc3NOYW1lPzogc3RyaW5nIH0pIHtcbiAgcmV0dXJuIDxtb3Rpb24uZGl2IGNsYXNzTmFtZT17YHN1bW1hcnktcmV2ZWFsICR7Y2xhc3NOYW1lfWB9IGluaXRpYWw9e3sgb3BhY2l0eTogMCwgeTogNSB9fSBhbmltYXRlPXt7IG9wYWNpdHk6IDEsIHk6IDAgfX0gdHJhbnNpdGlvbj17eyBkdXJhdGlvbjogbW90aW9uVG9rZW5zLm5vcm1hbCwgZGVsYXksIGVhc2U6IG1vdGlvblRva2Vucy5lYXNlIH19PntjaGlsZHJlbn08L21vdGlvbi5kaXY+O1xufVxuXG5leHBvcnQgZnVuY3Rpb24gRGFzaGJvYXJkUGFnZSgpIHtcbiAgY29uc3QgbmF2aWdhdGUgPSB1c2VOYXZpZ2F0ZSgpO1xuICBjb25zdCB7IHRyYW5zYWN0aW9ucywgcGlnZ2llcywgZ3JvdXBzLCBidWRnZXRzLCBhY2NvdW50cywgaGlkZGVuIH0gPSB1c2VBcHBEYXRhKCk7XG4gIGNvbnN0IGxhdGVzdE1vbnRoID0gWy4uLnRyYW5zYWN0aW9uc10uc29ydCgoYSwgYikgPT4gYi5kYXRlLmxvY2FsZUNvbXBhcmUoYS5kYXRlKSlbMF0/LmRhdGUuc2xpY2UoMCwgNykgPz8gbmV3IERhdGUoKS50b0lTT1N0cmluZygpLnNsaWNlKDAsIDcpO1xuICBjb25zdCBbcmVmZXJlbmNlTW9udGgsIHNldFJlZmVyZW5jZU1vbnRoXSA9IHVzZVN0YXRlKGxhdGVzdE1vbnRoKTtcbiAgY29uc3QgbW9udGhUcmFuc2FjdGlvbnMgPSBwZXJzb25hbExlZGdlclRyYW5zYWN0aW9ucyh0cmFuc2FjdGlvbnMpLmZpbHRlcigoaXRlbSkgPT4gaXRlbS5kYXRlLnN0YXJ0c1dpdGgocmVmZXJlbmNlTW9udGgpKTtcbiAgY29uc3QgaW5jb21lID0gbW9udGhUcmFuc2FjdGlvbnMuZmlsdGVyKChpdGVtKSA9PiBpdGVtLnR5cGUgPT09IFwiSU5DT01FXCIpLnJlZHVjZSgodG90YWwsIGl0ZW0pID0+IHRvdGFsICsgaXRlbS5hbW91bnQsIDApO1xuICBjb25zdCBleHBlbnNlcyA9IG1vbnRoVHJhbnNhY3Rpb25zLmZpbHRlcigoaXRlbSkgPT4gaXRlbS50eXBlID09PSBcIkVYUEVOU0VcIikucmVkdWNlKCh0b3RhbCwgaXRlbSkgPT4gdG90YWwgKyBpdGVtLmFtb3VudCwgMCk7XG4gIGNvbnN0IGluY29tZUNvdW50ID0gbW9udGhUcmFuc2FjdGlvbnMuZmlsdGVyKChpdGVtKSA9PiBpdGVtLnR5cGUgPT09IFwiSU5DT01FXCIpLmxlbmd0aDtcbiAgY29uc3QgZXhwZW5zZUNvdW50ID0gbW9udGhUcmFuc2FjdGlvbnMuZmlsdGVyKChpdGVtKSA9PiBpdGVtLnR5cGUgPT09IFwiRVhQRU5TRVwiKS5sZW5ndGg7XG4gIGNvbnN0IG9ibGlnYXRpb25zID0gZXhwZW5zZU9ibGlnYXRpb25zKG1vbnRoVHJhbnNhY3Rpb25zKTtcbiAgY29uc3QgY29tbWl0dGVkID0gb2JsaWdhdGlvbnMucmVkdWNlKCh0b3RhbCwgaXRlbSkgPT4gdG90YWwgKyBpdGVtLmFtb3VudCwgMCk7XG4gIGNvbnN0IGNvbW1pdHRlZE5lZWRzQXR0ZW50aW9uID0gb2JsaWdhdGlvbnMuc29tZSgoaXRlbSkgPT4gaXRlbS5zdGF0dXMgPT09IFwiT1ZFUkRVRVwiKTtcbiAgY29uc3QgYXZhaWxhYmxlQmFsYW5jZSA9IGFjY291bnRzLnJlZHVjZSgodG90YWwsIGFjY291bnQpID0+IHRvdGFsICsgYWNjb3VudC5iYWxhbmNlLCAwKTtcbiAgY29uc3QgdXBjb21pbmcgPSBbLi4ub2JsaWdhdGlvbnNdLnNvcnQoKGEsIGIpID0+IGEuZGF0ZS5sb2NhbGVDb21wYXJlKGIuZGF0ZSkpLnNsaWNlKDAsIDQpO1xuICBjb25zdCBhbGxDYXRlZ29yaWVzID0gc3BlbmRpbmdCeUNhdGVnb3J5KG1vbnRoVHJhbnNhY3Rpb25zKS5zb3J0KChhLCBiKSA9PiBiLmFtb3VudCAtIGEuYW1vdW50KTtcbiAgY29uc3QgdG90YWxDYXRlZ29yeVNwZW5kID0gYWxsQ2F0ZWdvcmllcy5yZWR1Y2UoKHRvdGFsLCBpdGVtKSA9PiB0b3RhbCArIGl0ZW0uYW1vdW50LCAwKTtcbiAgY29uc3QgY2F0ZWdvcmllcyA9IGFsbENhdGVnb3JpZXMubGVuZ3RoID4gNFxuICAgID8gWy4uLmFsbENhdGVnb3JpZXMuc2xpY2UoMCwgMyksIHsgY2F0ZWdvcnlJZDogXCJfX290aGVyX19cIiwgbmFtZTogXCJPdXRyb3NcIiwgYW1vdW50OiBhbGxDYXRlZ29yaWVzLnNsaWNlKDMpLnJlZHVjZSgodG90YWwsIGl0ZW0pID0+IHRvdGFsICsgaXRlbS5hbW91bnQsIDApIH1dXG4gICAgOiBhbGxDYXRlZ29yaWVzLnNsaWNlKDAsIDQpO1xuICBjb25zdCBidWRnZXRJdGVtcyA9IGJ1ZGdldHMuZmlsdGVyKChidWRnZXQpID0+IGJ1ZGdldC5yZWZlcmVuY2VNb250aCA9PT0gcmVmZXJlbmNlTW9udGgpLm1hcCgoYnVkZ2V0KSA9PiAoeyAuLi5idWRnZXQsIGN1cnJlbnRBbW91bnQ6IGJ1ZGdldFNwZW50KGJ1ZGdldCwgdHJhbnNhY3Rpb25zKSB9KSkuc29ydCgoYSwgYikgPT4gYi5jdXJyZW50QW1vdW50IC8gYi5saW1pdEFtb3VudCAtIGEuY3VycmVudEFtb3VudCAvIGEubGltaXRBbW91bnQpLnNsaWNlKDAsIDMpO1xuICBjb25zdCBmbG93ID0gT2JqZWN0LmVudHJpZXMobW9udGhUcmFuc2FjdGlvbnMucmVkdWNlPFJlY29yZDxzdHJpbmcsIHsgaW5jb21lOiBudW1iZXI7IGV4cGVuc2U6IG51bWJlciB9Pj4oKGFsbCwgaXRlbSkgPT4ge1xuICAgIGNvbnN0IHZhbHVlID0gYWxsW2l0ZW0uZGF0ZV0gPz8geyBpbmNvbWU6IDAsIGV4cGVuc2U6IDAgfTtcbiAgICBpZiAoaXRlbS50eXBlID09PSBcIklOQ09NRVwiKSB2YWx1ZS5pbmNvbWUgKz0gaXRlbS5hbW91bnQ7XG4gICAgaWYgKGl0ZW0udHlwZSA9PT0gXCJFWFBFTlNFXCIpIHZhbHVlLmV4cGVuc2UgKz0gaXRlbS5hbW91bnQ7XG4gICAgYWxsW2l0ZW0uZGF0ZV0gPSB2YWx1ZTtcbiAgICByZXR1cm4gYWxsO1xuICB9LCB7fSkpLnNvcnQoKFthXSwgW2JdKSA9PiBhLmxvY2FsZUNvbXBhcmUoYikpLm1hcCgoW2RhdGUsIHZhbHVlc10pID0+ICh7IGRheTogZGF0ZS5zbGljZSg4KSwgLi4udmFsdWVzIH0pKTtcbiAgY29uc3QgcmVjZW50ID0gWy4uLnRyYW5zYWN0aW9uc10uc29ydCgoYSwgYikgPT4gYi5kYXRlLmxvY2FsZUNvbXBhcmUoYS5kYXRlKSB8fCBiLmNyZWF0ZWRBdC5sb2NhbGVDb21wYXJlKGEuY3JlYXRlZEF0KSkuc2xpY2UoMCwgNik7XG4gIGNvbnN0IHNldE1vbnRoT2Zmc2V0ID0gKG9mZnNldDogbnVtYmVyKSA9PiB7XG4gICAgY29uc3QgZGF0ZSA9IG5ldyBEYXRlKGAke3JlZmVyZW5jZU1vbnRofS0wMVQxMjowMDowMGApO1xuICAgIGRhdGUuc2V0TW9udGgoZGF0ZS5nZXRNb250aCgpICsgb2Zmc2V0KTtcbiAgICBzZXRSZWZlcmVuY2VNb250aChkYXRlLnRvSVNPU3RyaW5nKCkuc2xpY2UoMCwgNykpO1xuICB9O1xuXG4gIHJldHVybiA8ZGl2IGNsYXNzTmFtZT1cImRhc2hib2FyZC1wYWdlXCI+XG4gICAgPG1vdGlvbi5kaXYgY2xhc3NOYW1lPVwiZGFzaGJvYXJkLWhlYWRlci1ibG9ja1wiIGluaXRpYWw9e3sgb3BhY2l0eTogMCwgeTogNCB9fSBhbmltYXRlPXt7IG9wYWNpdHk6IDEsIHk6IDAgfX0gdHJhbnNpdGlvbj17eyBkdXJhdGlvbjogbW90aW9uVG9rZW5zLm5vcm1hbCwgZWFzZTogbW90aW9uVG9rZW5zLmVhc2UgfX0+XG4gICAgICA8UGFnZUhlYWRlciBleWVicm93PVwiVmlzw6NvIGZpbmFuY2VpcmFcIiB0aXRsZT1cIlZpc8OjbyBnZXJhbFwiIGRlc2NyaXB0aW9uPVwiQWNvbXBhbmhlIHN1YXMgZGVjaXPDtWVzIGRvIG3DqnMgZW0gdW0gc8OzIGx1Z2FyLlwiIGFjdGlvbj17PEJ1dHRvbiBvbkNsaWNrPXsoKSA9PiBuYXZpZ2F0ZShcIi90cmFuc2FjdGlvbnM/bmV3PTFcIil9PjxQbHVzIHNpemU9ezE2fSAvPk5vdm8gbGFuw6dhbWVudG88L0J1dHRvbj59IC8+XG4gICAgICA8ZGl2IGNsYXNzTmFtZT1cInBlcmlvZC1jb250cm9sXCIgYXJpYS1sYWJlbD1cIlBlcsOtb2RvIGRlIHJlZmVyw6puY2lhXCI+XG4gICAgICAgIDxidXR0b24gYXJpYS1sYWJlbD1cIk3DqnMgYW50ZXJpb3JcIiBvbkNsaWNrPXsoKSA9PiBzZXRNb250aE9mZnNldCgtMSl9PjxDaGV2cm9uTGVmdCBzaXplPXsxNX0gLz48L2J1dHRvbj5cbiAgICAgICAgPEFuaW1hdGVQcmVzZW5jZSBpbml0aWFsPXtmYWxzZX0gbW9kZT1cIndhaXRcIj48bW90aW9uLnN0cm9uZyBrZXk9e3JlZmVyZW5jZU1vbnRofSBpbml0aWFsPXt7IG9wYWNpdHk6IDAsIHk6IDIgfX0gYW5pbWF0ZT17eyBvcGFjaXR5OiAxLCB5OiAwIH19IGV4aXQ9e3sgb3BhY2l0eTogMCwgeTogLTIgfX0gdHJhbnNpdGlvbj17eyBkdXJhdGlvbjogbW90aW9uVG9rZW5zLmZhc3QsIGVhc2U6IG1vdGlvblRva2Vucy5lYXNlIH19Pntmb3JtYXRNb250aChyZWZlcmVuY2VNb250aCl9PC9tb3Rpb24uc3Ryb25nPjwvQW5pbWF0ZVByZXNlbmNlPlxuICAgICAgICA8YnV0dG9uIGFyaWEtbGFiZWw9XCJQcsOzeGltbyBtw6pzXCIgb25DbGljaz17KCkgPT4gc2V0TW9udGhPZmZzZXQoMSl9PjxDaGV2cm9uUmlnaHQgc2l6ZT17MTV9IC8+PC9idXR0b24+XG4gICAgICA8L2Rpdj5cbiAgICA8L21vdGlvbi5kaXY+XG5cbiAgICA8c2VjdGlvbiBjbGFzc05hbWU9XCJkYXNoYm9hcmQtZmluYW5jaWFsXCIgYXJpYS1sYWJlbD1cIlJlc3VtbyBmaW5hbmNlaXJvXCI+XG4gICAgICA8U3VtbWFyeVJldmVhbCBkZWxheT17MC4wM30gY2xhc3NOYW1lPVwiYmFsYW5jZS1zdW1tYXJ5LXJldmVhbFwiPjxDYXJkIGNsYXNzTmFtZT1cImJhbGFuY2UtY2FyZCBkYXNoYm9hcmQtYmFsYW5jZVwiPjxkaXYgY2xhc3NOYW1lPVwic3VtbWFyeS1sYWJlbCBiYWxhbmNlLWtpY2tlclwiPjxXYWxsZXQgc2l6ZT17MTl9IHN0cm9rZVdpZHRoPXsxLjh9IC8+PHNwYW4+U2FsZG8gZGlzcG9uw612ZWw8L3NwYW4+PC9kaXY+PE1vbmV5VmFsdWUgYW1vdW50PXthdmFpbGFibGVCYWxhbmNlfSBoaWRkZW49e2hpZGRlbn0gc2l6ZT1cImxhcmdlXCIgLz48ZGl2IGNsYXNzTmFtZT1cImJhbGFuY2UtZm9vdGVyXCI+PHNwYW4+e2FjY291bnRzLmxlbmd0aH0gY29udGF7YWNjb3VudHMubGVuZ3RoID09PSAxID8gXCJcIiA6IFwic1wifSBkaXNwb27DrXZlbHthY2NvdW50cy5sZW5ndGggPT09IDEgPyBcIlwiIDogXCJpc1wifTwvc3Bhbj48aSBhcmlhLWhpZGRlbj1cInRydWVcIj7CtzwvaT48c3Bhbj5TYWxkbyB0cmFuc2FjaW9uYWwgYXR1YWw8L3NwYW4+PC9kaXY+PC9DYXJkPjwvU3VtbWFyeVJldmVhbD5cbiAgICAgIDxkaXYgY2xhc3NOYW1lPVwiZmluYW5jaWFsLXN0YXRzXCI+XG4gICAgICAgIDxTdW1tYXJ5UmV2ZWFsIGRlbGF5PXswLjA2fT48Q2FyZCBjbGFzc05hbWU9XCJzdGF0LWNhcmQgaW5jb21lLXN0YXRcIj48ZGl2IGNsYXNzTmFtZT1cInN1bW1hcnktbGFiZWwgc3RhdC1sYWJlbFwiPjxzcGFuPlJlY2VpdGFzPC9zcGFuPjxBcnJvd1VwUmlnaHQgc2l6ZT17MTl9IHN0cm9rZVdpZHRoPXsxLjh9IC8+PC9kaXY+PE1vbmV5VmFsdWUgYW1vdW50PXtpbmNvbWV9IHR5cGU9XCJpbmNvbWVcIiBoaWRkZW49e2hpZGRlbn0gLz48c21hbGw+e2luY29tZUNvdW50fSB7aW5jb21lQ291bnQgPT09IDEgPyBcImVudHJhZGFcIiA6IFwiZW50cmFkYXNcIn0gbm8gcGVyw61vZG88L3NtYWxsPjwvQ2FyZD48L1N1bW1hcnlSZXZlYWw+XG4gICAgICAgIDxTdW1tYXJ5UmV2ZWFsIGRlbGF5PXswLjA3NX0+PENhcmQgY2xhc3NOYW1lPVwic3RhdC1jYXJkIGV4cGVuc2Utc3RhdFwiPjxkaXYgY2xhc3NOYW1lPVwic3VtbWFyeS1sYWJlbCBzdGF0LWxhYmVsXCI+PHNwYW4+RGVzcGVzYXM8L3NwYW4+PEFycm93RG93blJpZ2h0IHNpemU9ezE5fSBzdHJva2VXaWR0aD17MS44fSAvPjwvZGl2PjxNb25leVZhbHVlIGFtb3VudD17ZXhwZW5zZXN9IHR5cGU9XCJleHBlbnNlXCIgaGlkZGVuPXtoaWRkZW59IC8+PHNtYWxsPntleHBlbnNlQ291bnR9IHtleHBlbnNlQ291bnQgPT09IDEgPyBcInNhw61kYVwiIDogXCJzYcOtZGFzXCJ9IG5vIHBlcsOtb2RvPC9zbWFsbD48L0NhcmQ+PC9TdW1tYXJ5UmV2ZWFsPlxuICAgICAgICA8U3VtbWFyeVJldmVhbCBkZWxheT17MC4wOX0gY2xhc3NOYW1lPVwiY29tbWl0dGVkLXN1bW1hcnktcmV2ZWFsXCI+PENhcmQgY2xhc3NOYW1lPXtgc3RhdC1jYXJkIGNvbW1pdHRlZC1jYXJkICR7Y29tbWl0dGVkTmVlZHNBdHRlbnRpb24gPyBcImF0dGVudGlvblwiIDogXCJcIn1gfT48ZGl2IGNsYXNzTmFtZT1cInN1bW1hcnktbGFiZWwgc3RhdC1sYWJlbFwiPjxzcGFuPkNvbXByb21ldGlkbzwvc3Bhbj48Q2FsZW5kYXJDbG9jayBzaXplPXsxOX0gc3Ryb2tlV2lkdGg9ezEuOH0gLz48L2Rpdj48TW9uZXlWYWx1ZSBhbW91bnQ9e2NvbW1pdHRlZH0gaGlkZGVuPXtoaWRkZW59IC8+PHNtYWxsPkNvbnRhcyBwZW5kZW50ZXMgb3UgYXRyYXNhZGFzIG5lc3RlIG3DqnMuPC9zbWFsbD48L0NhcmQ+PC9TdW1tYXJ5UmV2ZWFsPlxuICAgICAgPC9kaXY+XG4gICAgPC9zZWN0aW9uPlxuXG4gICAgPERhc2hib2FyZFNlY3Rpb24gaW5kZXg9ezN9PlxuICAgICAgPGRpdiBjbGFzc05hbWU9XCJzZWN0aW9uLWhlYWRpbmdcIj48ZGl2PjxoMj5GbHV4byBmaW5hbmNlaXJvPC9oMj48cD5SZWNlaXRhcyBlIGRlc3Blc2FzIGFvIGxvbmdvIGRlIHtmb3JtYXRNb250aChyZWZlcmVuY2VNb250aCl9LjwvcD48L2Rpdj48L2Rpdj5cbiAgICAgIDxkaXYgY2xhc3NOYW1lPVwiZGFzaGJvYXJkLWZsb3dcIj5cbiAgICAgICAgPENhcmQgY2xhc3NOYW1lPVwiZmxvdy1jYXJkXCI+XG4gICAgICAgICAge2Zsb3cubGVuZ3RoID8gKFxuICAgICAgICAgICAgPFJlc3BvbnNpdmVDb250YWluZXIgd2lkdGg9XCIxMDAlXCIgaGVpZ2h0PXsyNzZ9PlxuICAgICAgICAgICAgICA8QmFyQ2hhcnQgZGF0YT17Zmxvd30gYmFyR2FwPXs1fT5cbiAgICAgICAgICAgICAgICA8WEF4aXMgZGF0YUtleT1cImRheVwiIHRpY2tMaW5lPXtmYWxzZX0gYXhpc0xpbmU9e2ZhbHNlfSB0aWNrPXt7IGZpbGw6IFwiIzhkOGQ5NFwiLCBmb250U2l6ZTogMTEgfX0gLz5cbiAgICAgICAgICAgICAgICA8WUF4aXMgdGlja0xpbmU9e2ZhbHNlfSBheGlzTGluZT17ZmFsc2V9IHRpY2s9e3sgZmlsbDogXCIjOGQ4ZDk0XCIsIGZvbnRTaXplOiAxMCB9fSB3aWR0aD17NDB9IC8+XG4gICAgICAgICAgICAgICAgPFRvb2x0aXAgY3Vyc29yPXt7IGZpbGw6IFwiIzIwMjAyM1wiIH19IGNvbnRlbnRTdHlsZT17eyBiYWNrZ3JvdW5kOiBcIiMxNzE3MTlcIiwgYm9yZGVyOiBcIjFweCBzb2xpZCAjMzkzOTNlXCIsIGJvcmRlclJhZGl1czogMTAgfX0gZm9ybWF0dGVyPXsodmFsdWU6IG51bWJlcikgPT4gZm9ybWF0Q3VycmVuY3kodmFsdWUsIGhpZGRlbil9IC8+XG4gICAgICAgICAgICAgICAgPEJhciBkYXRhS2V5PVwiaW5jb21lXCIgbmFtZT1cIlJlY2VpdGFzXCIgZmlsbD1cIiMxNmEzNGFcIiByYWRpdXM9e1s0LCA0LCAwLCAwXX0gLz5cbiAgICAgICAgICAgICAgICA8QmFyIGRhdGFLZXk9XCJleHBlbnNlXCIgbmFtZT1cIkRlc3Blc2FzXCIgZmlsbD1cIiNkYzI2MjZcIiByYWRpdXM9e1s0LCA0LCAwLCAwXX0gLz5cbiAgICAgICAgICAgICAgPC9CYXJDaGFydD5cbiAgICAgICAgICAgIDwvUmVzcG9uc2l2ZUNvbnRhaW5lcj5cbiAgICAgICAgICApIDogPEVtcHR5U3RhdGUgdGl0bGU9XCJTZW0gbW92aW1lbnRhw6fDtWVzIG5lc3RlIHBlcsOtb2RvXCIgZGV0YWlsPVwiTyBmbHV4byBhcGFyZWNlIHF1YW5kbyBob3V2ZXIgbGFuw6dhbWVudG9zLlwiIC8+fVxuICAgICAgICA8L0NhcmQ+XG4gICAgICAgIDxDYXJkIGNsYXNzTmFtZT1cImNhdGVnb3J5LWNhcmRcIj48ZGl2IGNsYXNzTmFtZT1cInNlY3Rpb24taGVhZGluZ1wiPjxkaXY+PGgyPkdhc3RvcyBwb3IgY2F0ZWdvcmlhPC9oMj48cD5EaXN0cmlidWnDp8OjbyBkYXMgZGVzcGVzYXMgZG8gcGVyw61vZG8uPC9wPjwvZGl2PjwvZGl2PntjYXRlZ29yaWVzLmxlbmd0aCA/IDw+PGRpdiBjbGFzc05hbWU9XCJjYXRlZ29yeS1kb251dFwiPjxSZXNwb25zaXZlQ29udGFpbmVyPjxQaWVDaGFydD48UGllIGRhdGE9e2NhdGVnb3JpZXN9IGRhdGFLZXk9XCJhbW91bnRcIiBpbm5lclJhZGl1cz17NDd9IG91dGVyUmFkaXVzPXs2Nn0gc3Ryb2tlPVwibm9uZVwiPntjYXRlZ29yaWVzLm1hcCgoaXRlbSwgaW5kZXgpID0+IDxDZWxsIGtleT17aXRlbS5jYXRlZ29yeUlkfSBmaWxsPXtjYXRlZ29yeUNvbG9yc1tpbmRleF19IC8+KX08L1BpZT48VG9vbHRpcCBjb250ZW50U3R5bGU9e3sgYmFja2dyb3VuZDogXCIjMTcxNzE5XCIsIGJvcmRlcjogXCIxcHggc29saWQgIzM5MzkzZVwiLCBib3JkZXJSYWRpdXM6IDEwIH19IGZvcm1hdHRlcj17KHZhbHVlOiBudW1iZXIpID0+IGZvcm1hdEN1cnJlbmN5KHZhbHVlLCBoaWRkZW4pfSAvPjwvUGllQ2hhcnQ+PC9SZXNwb25zaXZlQ29udGFpbmVyPjwvZGl2PjxkaXYgY2xhc3NOYW1lPVwiY2F0ZWdvcnktbGlzdFwiPntjYXRlZ29yaWVzLm1hcCgoaXRlbSwgaW5kZXgpID0+IDxkaXYgY2xhc3NOYW1lPVwiY2F0ZWdvcnktcm93XCIga2V5PXtpdGVtLmNhdGVnb3J5SWR9PjxpIGNsYXNzTmFtZT1cImRvdFwiIHN0eWxlPXt7IGJhY2tncm91bmQ6IGNhdGVnb3J5Q29sb3JzW2luZGV4XSB9fSAvPjxzcGFuPntpdGVtLm5hbWV9PC9zcGFuPjxzbWFsbD57cGVyY2VudChpdGVtLmFtb3VudCwgdG90YWxDYXRlZ29yeVNwZW5kKX0lPC9zbWFsbD48TW9uZXlWYWx1ZSBhbW91bnQ9e2l0ZW0uYW1vdW50fSBoaWRkZW49e2hpZGRlbn0gc2l6ZT1cInNtYWxsXCIgLz48L2Rpdj4pfTwvZGl2PjwvPiA6IDxFbXB0eVN0YXRlIHRpdGxlPVwiU2VtIGdhc3RvcyBuZXN0ZSBwZXLDrW9kb1wiIGRldGFpbD1cIkFzIGRlc3Blc2FzIGFwYXJlY2Vyw6NvIGFxdWkuXCIgLz59PC9DYXJkPlxuICAgICAgPC9kaXY+XG4gICAgPC9EYXNoYm9hcmRTZWN0aW9uPlxuXG4gICAgPERhc2hib2FyZFNlY3Rpb24gaW5kZXg9ezR9IGNsYXNzTmFtZT1cImRhc2hib2FyZC1kdW9cIj5cbiAgICAgIDxDYXJkPjxkaXYgY2xhc3NOYW1lPVwic2VjdGlvbi1oZWFkaW5nXCI+PGRpdj48aDI+UHLDs3hpbW9zIGNvbXByb21pc3NvczwvaDI+PHA+Q29udGFzIHByZXZpc3RhcyBwYXJhIG8gcGVyw61vZG8gc2VsZWNpb25hZG8uPC9wPjwvZGl2PjxCdXR0b24gdmFyaWFudD1cImdob3N0XCIgb25DbGljaz17KCkgPT4gbmF2aWdhdGUoXCIvY2FsZW5kYXJcIil9PkNhbGVuZMOhcmlvPC9CdXR0b24+PC9kaXY+e3VwY29taW5nLmxlbmd0aCA/IHVwY29taW5nLm1hcCgoaXRlbSkgPT4gPGJ1dHRvbiBjbGFzc05hbWU9XCJiaWxsLXJvdyBkYXNoYm9hcmQtYmlsbC1yb3dcIiBrZXk9e2l0ZW0uaWR9IG9uQ2xpY2s9eygpID0+IG5hdmlnYXRlKGAvdHJhbnNhY3Rpb25zP3E9JHtlbmNvZGVVUklDb21wb25lbnQoaXRlbS5kZXNjcmlwdGlvbil9YCl9PjxzcGFuIGNsYXNzTmFtZT17YGJpbGwtZGF0ZSAke2l0ZW0uc3RhdHVzID09PSBcIk9WRVJEVUVcIiA/IFwib3ZlcmR1ZVwiIDogXCJcIn1gfT57Zm9ybWF0U2hvcnREYXRlKGl0ZW0uZGF0ZSl9PC9zcGFuPjxzcGFuIGNsYXNzTmFtZT1cImJpbGwtaW5mb1wiPjxzdHJvbmc+e2l0ZW0uZGVzY3JpcHRpb259PC9zdHJvbmc+PHNtYWxsPnthY2NvdW50TmFtZShpdGVtLmFjY291bnRJZCl9IMK3IHtpdGVtLnN0YXR1cyA9PT0gXCJPVkVSRFVFXCIgPyBcIkF0cmFzYWRvXCIgOiBcIlBlbmRlbnRlXCJ9PC9zbWFsbD48L3NwYW4+PE1vbmV5VmFsdWUgYW1vdW50PXtpdGVtLmFtb3VudH0gaGlkZGVuPXtoaWRkZW59IHNpemU9XCJzbWFsbFwiIC8+PC9idXR0b24+KSA6IDxFbXB0eVN0YXRlIHRpdGxlPVwiTmVuaHVtIGNvbXByb21pc3NvIG5lc3RlIHBlcsOtb2RvXCIgZGV0YWlsPVwiQ29udGFzIHBlbmRlbnRlcyBhcGFyZWNlbSBhcXVpLlwiIC8+fTwvQ2FyZD5cbiAgICAgIDxDYXJkPjxkaXYgY2xhc3NOYW1lPVwic2VjdGlvbi1oZWFkaW5nXCI+PGRpdj48aDI+T3LDp2FtZW50b3M8L2gyPjxwPkxpbWl0ZXMgbWFpcyBwcsOzeGltb3MuPC9wPjwvZGl2PjxCdXR0b24gdmFyaWFudD1cImdob3N0XCIgb25DbGljaz17KCkgPT4gbmF2aWdhdGUoXCIvYnVkZ2V0c1wiKX0+VmVyIHRvZG9zPC9CdXR0b24+PC9kaXY+e2J1ZGdldEl0ZW1zLmxlbmd0aCA/IGJ1ZGdldEl0ZW1zLm1hcCgoaXRlbSkgPT4geyBjb25zdCB1c2FnZSA9IHBlcmNlbnQoaXRlbS5jdXJyZW50QW1vdW50LCBpdGVtLmxpbWl0QW1vdW50KTsgY29uc3QgY29sb3IgPSB1c2FnZSA+PSAxMDAgPyBcIiNlZjQ0NDRcIiA6IHVzYWdlID49IDgwID8gXCIjZjVjNDUxXCIgOiBcIiMzYjgyZjZcIjsgY29uc3Qgc3RhdHVzID0gdXNhZ2UgPj0gMTAwID8gXCJFeGNlZGlkb1wiIDogdXNhZ2UgPj0gODAgPyBcIkF0ZW7Dp8Ojb1wiIDogXCJTZWd1cm9cIjsgcmV0dXJuIDxidXR0b24gY2xhc3NOYW1lPVwiZGFzaGJvYXJkLWJ1ZGdldC1yb3dcIiBrZXk9e2l0ZW0uaWR9IG9uQ2xpY2s9eygpID0+IG5hdmlnYXRlKGAvYnVkZ2V0cy8ke2l0ZW0uaWR9YCl9PjxzcGFuPjxzdHJvbmc+e2NhdGVnb3J5TmFtZShpdGVtLmNhdGVnb3J5SWQpfTwvc3Ryb25nPjxzbWFsbD48TW9uZXlWYWx1ZSBhbW91bnQ9e2l0ZW0uY3VycmVudEFtb3VudH0gaGlkZGVuPXtoaWRkZW59IHNpemU9XCJzbWFsbFwiIC8+IGRlIHtmb3JtYXRDdXJyZW5jeShpdGVtLmxpbWl0QW1vdW50LCBoaWRkZW4pfTwvc21hbGw+PC9zcGFuPjxzcGFuPnt1c2FnZX0lIMK3IHtzdGF0dXN9PC9zcGFuPjxQcm9ncmVzcyB2YWx1ZT17dXNhZ2V9IGNvbG9yPXtjb2xvcn0gLz48c21hbGwgY2xhc3NOYW1lPVwiZGFzaGJvYXJkLXJlbWFpbmluZ1wiPntmb3JtYXRDdXJyZW5jeShNYXRoLm1heCgwLCBpdGVtLmxpbWl0QW1vdW50IC0gaXRlbS5jdXJyZW50QW1vdW50KSwgaGlkZGVuKX0gcmVzdGFudGU8L3NtYWxsPjwvYnV0dG9uPjsgfSkgOiA8RW1wdHlTdGF0ZSB0aXRsZT1cIk5lbmh1bSBvcsOnYW1lbnRvIG5lc3RlIG3DqnNcIiBkZXRhaWw9XCJDcmllIGxpbWl0ZXMgcGFyYSBhY29tcGFuaGFyIHNldXMgZ2FzdG9zLlwiIC8+fTwvQ2FyZD5cbiAgICA8L0Rhc2hib2FyZFNlY3Rpb24+XG5cbiAgICA8RGFzaGJvYXJkU2VjdGlvbiBpbmRleD17NX0+XG4gICAgICA8ZGl2IGNsYXNzTmFtZT1cInNlY3Rpb24taGVhZGluZ1wiPjxkaXY+PGgyPlBsYW5lamFtZW50bzwvaDI+PHA+TWV0YXMgcGVzc29haXMgZSBvYmpldGl2b3MgY29tcGFydGlsaGFkb3MuPC9wPjwvZGl2PjwvZGl2PlxuICAgICAgPGRpdiBjbGFzc05hbWU9XCJkYXNoYm9hcmQtZHVvXCI+XG4gICAgICAgIDxDYXJkPjxkaXYgY2xhc3NOYW1lPVwic2VjdGlvbi1oZWFkaW5nXCI+PGRpdj48aDI+TWV0YXMgcGVzc29haXM8L2gyPjxwPntmb3JtYXRDdXJyZW5jeShwaWdneVRvdGFsKHBpZ2dpZXMpLCBoaWRkZW4pfSBndWFyZGFkb3M8L3A+PC9kaXY+PEJ1dHRvbiB2YXJpYW50PVwiZ2hvc3RcIiBvbkNsaWNrPXsoKSA9PiBuYXZpZ2F0ZShcIi9waWdneS1iYW5rc1wiKX0+VmVyIHRvZG9zPC9CdXR0b24+PC9kaXY+e3BpZ2dpZXMubGVuZ3RoID8gcGlnZ2llcy5zbGljZSgwLCAzKS5tYXAoKGl0ZW0pID0+IDxidXR0b24gY2xhc3NOYW1lPVwiZGFzaGJvYXJkLXBsYW4tcm93XCIga2V5PXtpdGVtLmlkfSBvbkNsaWNrPXsoKSA9PiBuYXZpZ2F0ZShgL3BpZ2d5LWJhbmtzLyR7aXRlbS5pZH1gKX0+PHNwYW4gY2xhc3NOYW1lPVwicGxhbi1pY29uXCI+PENpcmNsZURvbGxhclNpZ24gc2l6ZT17MTZ9IC8+PC9zcGFuPjxzcGFuPjxzdHJvbmc+e2l0ZW0ubmFtZX08L3N0cm9uZz48c21hbGw+PE1vbmV5VmFsdWUgYW1vdW50PXtpdGVtLmN1cnJlbnRBbW91bnR9IGhpZGRlbj17aGlkZGVufSBzaXplPVwic21hbGxcIiAvPiBkZSB7Zm9ybWF0Q3VycmVuY3koaXRlbS50YXJnZXRBbW91bnQsIGhpZGRlbil9PC9zbWFsbD48UHJvZ3Jlc3MgdmFsdWU9e3BlcmNlbnQoaXRlbS5jdXJyZW50QW1vdW50LCBpdGVtLnRhcmdldEFtb3VudCl9IGNvbG9yPXtpdGVtLnN0YXR1cyA9PT0gXCJDT01QTEVURURcIiA/IFwiI2Y1YzQ1MVwiIDogXCIjM2I4MmY2XCJ9IC8+e2l0ZW0uY3VycmVudEFtb3VudCA+IGl0ZW0udGFyZ2V0QW1vdW50ICYmIDxzbWFsbCBjbGFzc05hbWU9XCJnb2FsLW92ZXJhZ2VcIj57Zm9ybWF0Q3VycmVuY3koaXRlbS5jdXJyZW50QW1vdW50IC0gaXRlbS50YXJnZXRBbW91bnQsIGhpZGRlbil9IGFjaW1hIGRhIG1ldGE8L3NtYWxsPn08L3NwYW4+PHNwYW4+e2l0ZW0uc3RhdHVzID09PSBcIkNPTVBMRVRFRFwiID8gXCJDb25jbHXDrWRhXCIgOiBgJHtwZXJjZW50KGl0ZW0uY3VycmVudEFtb3VudCwgaXRlbS50YXJnZXRBbW91bnQpfSVgfTwvc3Bhbj48L2J1dHRvbj4pIDogPEVtcHR5U3RhdGUgdGl0bGU9XCJOZW5odW1hIG1ldGEgcGVzc29hbCBhdGl2YVwiIGRldGFpbD1cIkNyaWUgdW0gcG9ycXVpbmhvIHBhcmEgcGxhbmVqYXIgdW1hIG1ldGEuXCIgLz59PC9DYXJkPlxuICAgICAgICA8Q2FyZD48ZGl2IGNsYXNzTmFtZT1cInNlY3Rpb24taGVhZGluZ1wiPjxkaXY+PGgyPkdydXBvczwvaDI+PHA+UGxhbmVqYW1lbnRvIGNvbXBhcnRpbGhhZG8uPC9wPjwvZGl2PjxCdXR0b24gdmFyaWFudD1cImdob3N0XCIgb25DbGljaz17KCkgPT4gbmF2aWdhdGUoXCIvZ3JvdXBzXCIpfT5WZXIgdG9kb3M8L0J1dHRvbj48L2Rpdj57Z3JvdXBzLmxlbmd0aCA/IGdyb3Vwcy5zbGljZSgwLCAzKS5tYXAoKGl0ZW0pID0+IHsgY29uc3QgZnVuZCA9IGdyb3VwRnVuZFZhbHVlKGl0ZW0pOyByZXR1cm4gPGJ1dHRvbiBjbGFzc05hbWU9XCJkYXNoYm9hcmQtcGxhbi1yb3dcIiBrZXk9e2l0ZW0uaWR9IG9uQ2xpY2s9eygpID0+IG5hdmlnYXRlKGAvZ3JvdXBzLyR7aXRlbS5pZH1gKX0+PHNwYW4gY2xhc3NOYW1lPVwicGxhbi1pY29uXCI+PENpcmNsZURvbGxhclNpZ24gc2l6ZT17MTZ9IC8+PC9zcGFuPjxzcGFuPjxzdHJvbmc+e2l0ZW0ubmFtZX08L3N0cm9uZz48c21hbGw+e2dyb3VwTGFiZWwoaXRlbS50eXBlKX0gwrcge2l0ZW0ubWVtYmVycy5sZW5ndGh9IHBhcnRpY2lwYW50ZShzKTwvc21hbGw+e2l0ZW0udGFyZ2V0QW1vdW50ICYmIDw+PHNtYWxsPjxNb25leVZhbHVlIGFtb3VudD17ZnVuZH0gaGlkZGVuPXtoaWRkZW59IHNpemU9XCJzbWFsbFwiIC8+IGRlIHtmb3JtYXRDdXJyZW5jeShpdGVtLnRhcmdldEFtb3VudCwgaGlkZGVuKX08L3NtYWxsPjxQcm9ncmVzcyB2YWx1ZT17cGVyY2VudChmdW5kLCBpdGVtLnRhcmdldEFtb3VudCl9IC8+PC8+fTwvc3Bhbj57aXRlbS50YXJnZXRBbW91bnQgJiYgPHNwYW4+e3BlcmNlbnQoZnVuZCwgaXRlbS50YXJnZXRBbW91bnQpfSU8L3NwYW4+fTwvYnV0dG9uPjsgfSkgOiA8RW1wdHlTdGF0ZSB0aXRsZT1cIk5lbmh1bSBwbGFuZWphbWVudG8gY29tcGFydGlsaGFkb1wiIGRldGFpbD1cIkNyaWUgb3UgZW50cmUgZW0gdW0gZ3J1cG8gcGFyYSBhY29tcGFuaGFyIG9iamV0aXZvcyBqdW50b3MuXCIgLz59PC9DYXJkPlxuICAgICAgPC9kaXY+XG4gICAgPC9EYXNoYm9hcmRTZWN0aW9uPlxuXG4gICAgPERhc2hib2FyZFNlY3Rpb24gaW5kZXg9ezZ9PjxDYXJkPjxkaXYgY2xhc3NOYW1lPVwic2VjdGlvbi1oZWFkaW5nXCI+PGRpdj48aDI+QXRpdmlkYWRlIHJlY2VudGU8L2gyPjxwPkhpc3TDs3JpY28gbWFpcyByZWNlbnRlLCBpbmRlcGVuZGVudGUgZG8gbcOqcyBzZWxlY2lvbmFkby48L3A+PC9kaXY+PEJ1dHRvbiB2YXJpYW50PVwiZ2hvc3RcIiBvbkNsaWNrPXsoKSA9PiBuYXZpZ2F0ZShcIi90cmFuc2FjdGlvbnNcIil9PlZlciB0b2RvcyBvcyBsYW7Dp2FtZW50b3MgPEFycm93UmlnaHQgc2l6ZT17MTR9IC8+PC9CdXR0b24+PC9kaXY+e3JlY2VudC5sZW5ndGggPyByZWNlbnQubWFwKChpdGVtKSA9PiA8bW90aW9uLmJ1dHRvbiBsYXlvdXQgY2xhc3NOYW1lPVwidHJhbnNhY3Rpb24tcm93IGRhc2hib2FyZC10cmFuc2FjdGlvbi1yb3dcIiBrZXk9e2l0ZW0uaWR9IGluaXRpYWw9e3sgb3BhY2l0eTogMCwgeTogLTQgfX0gYW5pbWF0ZT17eyBvcGFjaXR5OiAxLCB5OiAwIH19IHRyYW5zaXRpb249e3sgZHVyYXRpb246IG1vdGlvblRva2Vucy5mYXN0LCBlYXNlOiBtb3Rpb25Ub2tlbnMuZWFzZSB9fSBvbkNsaWNrPXsoKSA9PiBuYXZpZ2F0ZShgL3RyYW5zYWN0aW9ucz9xPSR7ZW5jb2RlVVJJQ29tcG9uZW50KGl0ZW0uZGVzY3JpcHRpb24pfWApfT48c3BhbiBjbGFzc05hbWU9XCJ0cmFuc2FjdGlvbi1pY29uXCI+e2l0ZW0udHlwZSA9PT0gXCJJTkNPTUVcIiA/IDxBcnJvd1VwUmlnaHQgc2l6ZT17MTV9IC8+IDogaXRlbS50eXBlID09PSBcIkVYUEVOU0VcIiA/IDxBcnJvd0Rvd25SaWdodCBzaXplPXsxNX0gLz4gOiA8QXJyb3dMZWZ0UmlnaHQgc2l6ZT17MTV9IC8+fTwvc3Bhbj48c3BhbiBjbGFzc05hbWU9XCJ0cmFuc2FjdGlvbi1pbmZvXCI+PHN0cm9uZz57aXRlbS5kZXNjcmlwdGlvbn08L3N0cm9uZz48c21hbGw+e2l0ZW0uZmluYW5jaWFsU2NvcGUgPT09IFwiU0hBUkVEXCIgPyBcIkZ1bmRvIGNvbXBhcnRpbGhhZG9cIiA6IGl0ZW0udHlwZSA9PT0gXCJUUkFOU0ZFUlwiID8gXCJUcmFuc2ZlcsOqbmNpYVwiIDogY2F0ZWdvcnlOYW1lKGl0ZW0uY2F0ZWdvcnlJZCl9IMK3IHtmb3JtYXREYXRlKGl0ZW0uZGF0ZSl9PC9zbWFsbD48L3NwYW4+PE1vbmV5VmFsdWUgYW1vdW50PXtpdGVtLmFtb3VudH0gdHlwZT17aXRlbS50eXBlID09PSBcIklOQ09NRVwiID8gXCJpbmNvbWVcIiA6IGl0ZW0udHlwZSA9PT0gXCJFWFBFTlNFXCIgPyBcImV4cGVuc2VcIiA6IHVuZGVmaW5lZH0gaGlkZGVuPXtoaWRkZW59IHNpemU9XCJzbWFsbFwiIC8+PC9tb3Rpb24uYnV0dG9uPikgOiA8RW1wdHlTdGF0ZSB0aXRsZT1cIk5lbmh1bWEgYXRpdmlkYWRlIHJlY2VudGVcIiBkZXRhaWw9XCJPcyBsYW7Dp2FtZW50b3MgYXBhcmVjZW0gYXF1aSBhc3NpbSBxdWUgZm9yZW0gcmVnaXN0cmFkb3MuXCIgLz59PC9DYXJkPjwvRGFzaGJvYXJkU2VjdGlvbj5cbiAgPC9kaXY+O1xufVxuIl0sImZpbGUiOiJDOi9Vc2Vycy9qcGJyYS9Eb2N1bWVudHMvR2l0SHViL0NvZnJpbi9mcm9udGVuZC9zcmMvcGFnZXMvRGFzaGJvYXJkUGFnZS50c3gifQ==
